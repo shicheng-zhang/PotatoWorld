@@ -17,7 +17,7 @@ typedef struct {
 } camera;
 //Init Camera (starting values)
 void initialize_camera (camera *camera_object, vector3 starting_position);
-//4 ^ 4 view matrix --> OpenGL shaders
+//4 ^ 4 view matrix - -> OpenGL shaders
 //void camera_view_matrix (camera *camera_object, float *matrix_output);
 //Input and Motion Functions
 void camera_update_vectors (camera *camera_object);

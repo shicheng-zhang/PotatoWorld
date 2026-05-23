@@ -4,6 +4,7 @@
 #include "../../../stage4/master_header_4.h"
 #include "../../../stage5/master_header_5.h"
 #include "../../../stage5/constraints/spring_joint.h"
+#include <complex.h>
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -19,7 +20,7 @@ float world_drag_coefficient = 0.99f; // Used in pow (drag, delta)
 float world_surface_friction_static = 0.2f;
 float world_surface_friction_kinetic = 0.1f;
 float variable_change_rate = 0.2f;
-float jump_height = 1.0f;
+float jump_height = 1.4f;
 static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, gint new_text_length, gint *position, gpointer user_data) {
     (void) position;
     (void) user_data;
@@ -68,120 +69,144 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
 } gboolean physics_step_increment (gpointer user_data_pointer) {
     GtkWidget *parent_window = NULL;
     if (user_data_pointer) {parent_window = gtk_widget_get_toplevel (GTK_WIDGET (user_data_pointer));}
-    if (main_inputs.is_debug_mode_active) {
-        if (main_inputs.left_arrow_pressed)  {variable_change_rate -= 0.01f; main_inputs.left_arrow_pressed = false;}
-        if (main_inputs.right_arrow_pressed) {variable_change_rate += 0.01f; main_inputs.right_arrow_pressed = false;}
-    } else {
-        if (main_inputs.left_arrow_pressed)  {variable_change_rate -= 0.2f; main_inputs.left_arrow_pressed = false;}
-        if (main_inputs.right_arrow_pressed) {variable_change_rate += 0.2f; main_inputs.right_arrow_pressed = false;}
-    } float adjustment_increment = variable_change_rate;
+    if (main_inputs.left_arrow_pressed)  {variable_change_rate -= 0.2f; main_inputs.left_arrow_pressed = false;}
+    if (main_inputs.right_arrow_pressed) {variable_change_rate += 0.2f; main_inputs.right_arrow_pressed = false;}
+    float adjustment_increment = variable_change_rate;
     static int status_dir_checked = 0;
     if (!status_dir_checked) {mkdir ("status", 0755); status_dir_checked = 1;}
     frame_timer_update (&main_timer);
     float frame_delta_time = main_timer.delta_time;
     //Camera Movements
-    if (!main_inputs.is_debug_mode_active) {
-        if (main_inputs.w_key_pressed) {camera_move_forward (&main_camera_fov, frame_delta_time);}
-        if (main_inputs.a_key_pressed) {camera_move_left (&main_camera_fov, frame_delta_time);}
-        if (main_inputs.s_key_pressed) {camera_move_backward (&main_camera_fov, frame_delta_time);}
-        if (main_inputs.d_key_pressed) {camera_move_right (&main_camera_fov, frame_delta_time);}
-    } //Perspective Steering
+    if (main_inputs.w_key_pressed) {camera_move_forward (&main_camera_fov, frame_delta_time);}
+    if (main_inputs.a_key_pressed) {camera_move_left (&main_camera_fov, frame_delta_time);}
+    if (main_inputs.s_key_pressed) {camera_move_backward (&main_camera_fov, frame_delta_time);}
+    if (main_inputs.d_key_pressed) {camera_move_right (&main_camera_fov, frame_delta_time);}
+    //Perspective Steering
     float perspective_steering_sensitivity = 0.12f;
     if (main_inputs.is_mouse_locked) {
         main_camera_fov.yaw += main_inputs.mouse_delta_x * perspective_steering_sensitivity;
-        main_camera_fov.pitch += main_inputs.mouse_delta_y * perspective_steering_sensitivity;
+        main_camera_fov.pitch -= main_inputs.mouse_delta_y * perspective_steering_sensitivity;
         main_inputs.mouse_delta_x = 0.0f;
         main_inputs.mouse_delta_y = 0.0f;
-    } //IJKL Emulation (Debug Mode)
-    if (main_inputs.is_debug_mode_active) {
-        float debug_speed = main_camera_fov.movement_speed * frame_delta_time;
-        if (main_inputs.w_key_pressed) {main_camera_fov.position = vector3_addition (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, debug_speed));}
-        if (main_inputs.s_key_pressed) {main_camera_fov.position = vector3_subtraction (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, debug_speed));}
-        if (main_inputs.a_key_pressed) {main_camera_fov.position = vector3_subtraction (main_camera_fov.position, vector3_scaling (main_camera_fov.side_vector, debug_speed));}
-        if (main_inputs.d_key_pressed) {main_camera_fov.position = vector3_addition (main_camera_fov.position, vector3_scaling (main_camera_fov.side_vector, debug_speed));}
-        float ijkl_speed = 35.0f * frame_delta_time;
-        if (main_inputs.i_key_pressed) {main_camera_fov.pitch += ijkl_speed;}
-        if (main_inputs.k_key_pressed) {main_camera_fov.pitch -= ijkl_speed;}
-        if (main_inputs.j_key_pressed) {main_camera_fov.yaw -= ijkl_speed;}
-        if (main_inputs.l_key_pressed) {main_camera_fov.yaw += ijkl_speed;}
     } if (main_camera_fov.pitch > 89.0f) {main_camera_fov.pitch = 89.0f;}
     if (main_camera_fov.pitch < -89.0f) {main_camera_fov.pitch = -89.0f;}
     camera_update_vectors (&main_camera_fov);
     //Character Logic
-    if (!main_inputs.is_debug_mode_active) {
-        float horizontal_friction = 8.0f;
-        main_camera_fov.horizontal_velocity.x -= main_camera_fov.horizontal_velocity.x * horizontal_friction * frame_delta_time;
-        main_camera_fov.horizontal_velocity.z -= main_camera_fov.horizontal_velocity.z * horizontal_friction * frame_delta_time;
-        main_camera_fov.position.x += main_camera_fov.horizontal_velocity.x * frame_delta_time;
-        main_camera_fov.position.z += main_camera_fov.horizontal_velocity.z * frame_delta_time;
-        main_camera_fov.vertical_velocity += world_gravity_y * frame_delta_time;
-        main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time;
-        if (main_camera_fov.position.y <= 2.0f) {
-            main_camera_fov.position.y = 2.0f;
-            main_camera_fov.vertical_velocity = 0.0f;
-            if (main_inputs.space_key_pressed) {
-                float jump_velocity = sqrtf (2.0f * fabsf (world_gravity_y) * jump_height);
-                main_camera_fov.vertical_velocity = jump_velocity;
-                main_inputs.space_key_pressed = false;
+    float horizontal_friction = 8.0f;
+    main_camera_fov.horizontal_velocity.x -= main_camera_fov.horizontal_velocity.x * horizontal_friction * frame_delta_time;
+    main_camera_fov.horizontal_velocity.z -= main_camera_fov.horizontal_velocity.z * horizontal_friction * frame_delta_time;
+    main_camera_fov.position.x += main_camera_fov.horizontal_velocity.x * frame_delta_time;
+    main_camera_fov.position.z += main_camera_fov.horizontal_velocity.z * frame_delta_time;
+    main_camera_fov.vertical_velocity += world_gravity_y * frame_delta_time;
+    main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time;
+    float ground_level = 2.0f;
+    bool is_grounded = false;
+    if (main_camera_fov.position.y <= ground_level) {
+        main_camera_fov.position.y = ground_level;
+        is_grounded = true;
+    } //Check for standing on cubes
+    // Check for standing on cubes — rotation-aware, fall-speed-safe
+    // Player-cube collision — treat player as a sphere at body centre, radius 0.4
+    // Eye height is 2.0 so body centre is at position.y - 1.0
+    float player_radius = 0.4f;
+    rigidbody player_sphere;
+    player_sphere.type = object_sphere;
+    player_sphere.radius = player_radius;
+    player_sphere.inverse_mass = 1.0f;
+    player_sphere.mass = 1.0f;
+    for (int i = 0; i < object_count; i++) {
+        rigidbody *rb = &obj_per_scene [i];
+        if (rb -> type != object_cube) {continue;}
+        // Run the test twice — once for the feet sphere, once for the body sphere
+        // Feet at position.y - 1.8 (near floor contact), body at position.y - 1.0
+        float test_offsets [2] = {-1.8f, -1.0f};
+        for (int t = 0; t < 2; t++) {
+            player_sphere.position = (vector3) {
+                main_camera_fov.position.x,
+                main_camera_fov.position.y + test_offsets [t],
+                main_camera_fov.position.z
+            }; collision_data cd;
+            if (!collision_sphere_cube (&player_sphere, rb, &cd)) {continue;}
+            // Push player out along the collision normal
+            // Normal in collision_sphere_cube points sphere -> cube, so negate to push player away
+            vector3 push = vector3_scaling (cd.normal_vector, -cd.penetration_contact);
+            main_camera_fov.position.x += push.x;
+            main_camera_fov.position.y += push.y;
+            main_camera_fov.position.z += push.z;
+            // If the push has an upward component the player landed on a surface
+            if (push.y > 0.01f && main_camera_fov.vertical_velocity < 0.0f) {
+                main_camera_fov.vertical_velocity = 0.0f;
+                is_grounded = true;
+            } // If the push is mostly horizontal, kill velocity in that direction (wall stop)
+            if ((fabsf (push.x) > fabsf (push.y)) || (fabsf (push.z) > fabsf (push.y))) {
+                float vdotn = main_camera_fov.horizontal_velocity.x * (-cd.normal_vector.x) + main_camera_fov.horizontal_velocity.z * (-cd.normal_vector.z);
+                if (vdotn < 0.0f) {
+                    main_camera_fov.horizontal_velocity.x -= vdotn * (-cd.normal_vector.x);
+                    main_camera_fov.horizontal_velocity.z -= vdotn * (-cd.normal_vector.z);
+                }
             }
-        } if (main_camera_fov.position.x < -250.0f) {main_camera_fov.position.x = -250.0f;}
-        if (main_camera_fov.position.x > 250.0f) {main_camera_fov.position.x = 250.0f;}
-        if (main_camera_fov.position.z < -250.0f) {main_camera_fov.position.z = -250.0f;}
-        if (main_camera_fov.position.z > 250.0f) {main_camera_fov.position.z = 250.0f;}
-    } //Mouse, Escape, E, F key bindings and actions
+        }
+    } if (is_grounded) {
+        if (main_camera_fov.vertical_velocity < 0.0f) {main_camera_fov.vertical_velocity = 0.0f;}
+        if (main_inputs.space_key_pressed) {
+            float jump_velocity = sqrtf (2.0f * fabsf (world_gravity_y) * jump_height);
+            main_camera_fov.vertical_velocity = jump_velocity;
+            main_inputs.space_key_pressed = false;
+        }
+    } if (main_camera_fov.position.x < -250.0f) {main_camera_fov.position.x = -250.0f;}
+    if (main_camera_fov.position.x > 250.0f) {main_camera_fov.position.x = 250.0f;}
+    if (main_camera_fov.position.z < -250.0f) {main_camera_fov.position.z = -250.0f;}
+    if (main_camera_fov.position.z > 250.0f) {main_camera_fov.position.z = 250.0f;}
+    //Mouse, Escape, E, F key bindings and actions
     if (main_inputs.escape_key_pressed) {
         if (main_inputs.is_mouse_locked) {
             mouse_lock_disable (gtk_widget_get_toplevel (GTK_WIDGET (user_data_pointer)));
             main_inputs.is_mouse_locked = false;
         } main_inputs.escape_key_pressed = false;
-    } if (main_inputs.right_mouse_button_clicked) {
+    } // Middle Click: Select Object
+    if (main_inputs.middle_mouse_button_clicked) {
         selector_ray_tracing ();
-        main_inputs.right_mouse_button_clicked = false;
-    } if (main_inputs.middle_mouse_button_clicked) {
-        //Scroll wheel click removes object
-        if (selected_object >= 0) {
-            //Shift objects down to fill hole
-            remove_joints_from_object (selected_object);
-            for (int object_index = selected_object; object_index < object_count - 1; object_index++) {obj_per_scene [object_index] = obj_per_scene [object_index + 1];}
+        main_inputs.middle_mouse_button_clicked = false;
+    } // Right Click: Spawn Object
+    if (main_inputs.right_mouse_button_clicked) {
+        if (main_inputs.current_spawn_type == 0) {
+            spawner_launch_sphere (spawn_radius, spawn_mass, spawn_speed);
+        } else {
+            vector3 snapped_pos;
+            float snap_buffer = spawn_cube_extent * 4.0f; // 2 block lengths
+            if (selector_get_snapped_hit (&snapped_pos, snap_buffer, spawn_cube_extent)) {
+                spawner_static_cube (snapped_pos, (vector3){spawn_cube_extent, spawn_cube_extent, spawn_cube_extent}, spawn_cube_mass);
+            }
+        } main_inputs.right_mouse_button_clicked = false;
+    } // Left Click: Remove Object under crosshair
+    if (main_inputs.left_mouse_button_clicked) {
+        int hit_object = selector_ray_tracing ();
+        if (hit_object >= 0) {
+            remove_joints_from_object (hit_object);
+            for (int object_index = hit_object; object_index < object_count - 1; object_index++) {obj_per_scene [object_index] = obj_per_scene [object_index + 1];}
             object_count -= 1;
-            selected_object = -1;
-        } main_inputs.middle_mouse_button_clicked = false;
+            if (selected_object == hit_object) {selected_object = -1;}
+            else if (selected_object > hit_object) {selected_object--;}
+        } main_inputs.left_mouse_button_clicked = false;
     } if (main_inputs.e_key_pressed) {
         if (selected_object >= 0) {
-            if (main_inputs.object_menu_level > 0) {main_inputs.object_menu_level = 0;}
-            else {main_inputs.object_menu_level = 1;}
+            if (obj_per_scene [selected_object].type == object_sphere) {
+                if (main_inputs.object_menu_level > 0) {main_inputs.object_menu_level = 0;}
+                else {main_inputs.object_menu_level = 1;}
+            }
         } main_inputs.e_key_pressed = false;
     } if (main_inputs.f_key_pressed) {
         if (selected_object >= 0) {selector_apply_force_impulse (250.0f);} //Increased as cube friction is far higher
         main_inputs.f_key_pressed = false;
-    } //Holding down shift, spawn gun
-    static float shift_hold_timer = 0.0f;
-    static float shift_spawn_interval_timer = 0.0f;
-    static bool shift_previously_held = false;
+    } // Shift: Toggle Spawn Type
+    static bool shift_previously_pressed = false;
     if (main_inputs.shift_key_pressed) {
-        if (!shift_previously_held) {
-            if (main_inputs.current_spawn_type == 0) {spawner_launch_sphere (spawn_radius, spawn_mass, spawn_speed);}
-            else {
-                vector3 cube_spawn_position = vector3_addition (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, spawn_cube_extent + 1.0f));
-                spawner_launch_cube (cube_spawn_position, (vector3) {spawn_cube_extent, spawn_cube_extent, spawn_cube_extent}, spawn_cube_mass);
-            } shift_hold_timer = 0.0f;
-            shift_spawn_interval_timer = 0.0f;
-        } else {
-            shift_hold_timer += frame_delta_time;
-            if (shift_hold_timer > 0.3f) {
-                shift_spawn_interval_timer += frame_delta_time;
-                if (shift_spawn_interval_timer >= 0.02f) {
-                    if (main_inputs.current_spawn_type == 0) {spawner_launch_sphere (spawn_radius, spawn_mass, spawn_speed);}
-                    else {
-                        vector3 cube_spawn_position = vector3_addition (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, spawn_cube_extent + 1.0f));
-                        spawner_launch_cube (cube_spawn_position, (vector3) {spawn_cube_extent, spawn_cube_extent, spawn_cube_extent}, spawn_cube_mass);
-                    } shift_spawn_interval_timer = 0.0f;
-                }
-            }
-        } shift_previously_held = true;
+        if (!shift_previously_pressed) {
+            if (main_inputs.current_spawn_type == 0) {main_inputs.current_spawn_type = 1;}
+            else {main_inputs.current_spawn_type = 0;}
+        } shift_previously_pressed = true;
     } else {
-        shift_hold_timer = 0.0f;
-        shift_previously_held = false;
+        shift_previously_pressed = false;
     } //Scene Saving, 9 Key bindings
     if (main_inputs.menu_1_pressed) {save_scene ("status/scene.dat"); main_inputs.menu_1_pressed = false; main_inputs.is_menu_open = false;}
     if (main_inputs.menu_2_pressed) {scene_loading ("status/scene.dat"); main_inputs.menu_2_pressed = false; main_inputs.is_menu_open = false;}
@@ -195,14 +220,6 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         spawn_radius = open_numerical_input_dialog (parent_window, "Sphere Radius (m)", spawn_radius);
         if (spawn_radius < 0.01f) {spawn_radius = 0.01f;}
         main_inputs.spawner_menu_level = 2;
-    } else if (main_inputs.spawner_menu_level == 6) {
-        spawn_cube_mass = open_numerical_input_dialog (parent_window, "Cube Mass (kg)", spawn_cube_mass);
-        if (spawn_cube_mass < 0.01f) {spawn_cube_mass = 0.01f;}
-        main_inputs.spawner_menu_level = 5;
-    } else if (main_inputs.spawner_menu_level == 7) {
-        spawn_cube_extent = open_numerical_input_dialog (parent_window, "Cube Size (m)", spawn_cube_extent);
-        if (spawn_cube_extent < 0.01f) {spawn_cube_extent = 0.01f;}
-        main_inputs.spawner_menu_level = 5;
     } if (main_inputs.spawner_menu_level == 8) {
         if ((main_inputs.up_arrow_pressed) || (main_inputs.down_arrow_pressed)) {
             if (main_inputs.current_spawn_type == 0) {main_inputs.current_spawn_type = 1;}
@@ -345,8 +362,7 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         } for (int object_iterator_index = 0; object_iterator_index < object_count; object_iterator_index++) {
             rigidbody *rigid_body = &obj_per_scene [object_iterator_index];
             rb_integrate (rigid_body, sub_step_dt, linear_damping_factor, angular_damping_factor);
-            if (!main_inputs.is_debug_mode_active) {boundary_apply_box (rigid_body, (vector3){-250, 0, -250}, (vector3){250, 500, 250});}
-            else {boundary_apply_floor (rigid_body, 0.0f);}
+            boundary_apply_box (rigid_body, (vector3){-250, 0, -250}, (vector3){250, 500, 250});
         }
     } gtk_widget_queue_draw (GTK_WIDGET (user_data_pointer));
     overlay_update ();

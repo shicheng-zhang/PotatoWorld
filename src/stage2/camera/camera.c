@@ -1,7 +1,7 @@
 #include "camera.h"
 #include <math.h>
 void camera_update_vectors (camera *camera_object) {
-    //Front Vector --> Pitch and Yaw
+    //Front Vector - -> Pitch and Yaw
     //Deg to Rad
     float yaw_radians = camera_object -> yaw * degrad;
     float pitch_radians = camera_object -> pitch * degrad;
@@ -12,7 +12,7 @@ void camera_update_vectors (camera *camera_object) {
     //Normalise Frontal Vector
     camera_object -> forward_vector = vector3_normalisation (updated_forward_vector);
     //Calculate Right Side and Vertical Vectors
-    //Cross of Frontal and Up view {0, 1, 0} --> Right Axis
+    //Cross of Frontal and Up view {0, 1, 0} - -> Right Axis
     vector3 global_up_vector = {0.0f, 1.0f, 0.0f};
     camera_object -> side_vector = vector3_normalisation (vector3_cross (camera_object -> forward_vector, global_up_vector));
     //Cross right and front gives the UP axis

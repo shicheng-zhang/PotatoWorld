@@ -15,6 +15,8 @@ extern camera main_camera_fov;
 extern rigidbody *obj_per_scene;
 extern int object_count;
 extern mesh cube_mesh;
+extern input_status main_inputs;
+extern const float spawn_cube_extent;
 static GLuint shaders_program_total = 0;
 static struct {
     GLint projection_matrix_location;
@@ -103,7 +105,7 @@ void render_init () {
     render_init ();
     //View Status, Clear SCN
     glViewport (0, 0, widget_width, widget_height);
-    glClearColor (0.05f, 0.05f, 0.1f, 1.0f);
+    glClearColor (0.1f, 0.2f, 0.35f, 1.0f);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram (shaders_program_total);
     //Projection Matrix, 4D Matrix
@@ -123,9 +125,22 @@ void render_init () {
     //Draw Each Object in Question
     grid_render (&main_grid, shaders_program_total, view_matrix, projection_matrix);
     glUseProgram (shaders_program_total); // Ensure we are back to our main program after grid_render
+    // Spawn Preview (Only if no object is selected)
+    if (selected_object < 0 && main_inputs.current_spawn_type == 1) { // Cube
+        vector3 snapped_pos;
+        float snap_buffer = spawn_cube_extent * 4.0f; // 2 block lengths
+        if (selector_get_snapped_hit (&snapped_pos, snap_buffer, spawn_cube_extent)) {
+            rigidbody preview_cube;
+            preview_cube.position = snapped_pos;
+            preview_cube.orientation = (vector4){1, 0, 0, 0};
+            preview_cube.type = object_cube;
+            preview_cube.half_extensions = (vector3){spawn_cube_extent, spawn_cube_extent, spawn_cube_extent};
+            wireframe_render_object (shaders_program_total, view_matrix, projection_matrix, &preview_cube, (vector3){1.0f, 1.0f, 0.0f});
+        }
+    }
     for (int object_index = 0; object_index < object_count; object_index++) {
         rigidbody *rigid_body = &obj_per_scene [object_index];
-        //Model Matrix --> Position + Orientation
+        //Model Matrix - -> Position + Orientation
         math4 translation_matrix = math4_translation (rigid_body -> position);
         math4 rotation_matrix = vector4_to_math4 (rigid_body -> orientation);
         math4 scale_matrix;

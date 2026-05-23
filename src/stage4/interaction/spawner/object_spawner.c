@@ -1,26 +1,17 @@
 #include "object_spawner.h"
 float spawn_mass = 1.0f;
 float spawn_radius = 0.5f;
-float spawn_cube_mass = 2.0f;
-float spawn_cube_extent = 0.5f;
-float spawn_speed = 20.0f;
+const float spawn_cube_mass = 2.0f;
+const float spawn_cube_extent = 0.5f;
+float spawn_speed = 10.0f;
 float friction_static = 0.3f;
 float friction_kinetic = 0.2f;
 static vector3 get_viewpoint_velocity (void) {
-    vector3 player_velocity = vector3_zero ();
-    if (!main_inputs.is_debug_mode_active) {
-        player_velocity = (vector3) {
-            main_camera_fov.horizontal_velocity.x,
-            main_camera_fov.vertical_velocity,
-            main_camera_fov.horizontal_velocity.z
-        };
-    } else {
-        if (main_inputs.w_key_pressed) {player_velocity = vector3_addition (player_velocity, vector3_scaling (main_camera_fov.forward_vector, main_camera_fov.movement_speed));}
-        if (main_inputs.s_key_pressed) {player_velocity = vector3_subtraction (player_velocity, vector3_scaling (main_camera_fov.forward_vector, main_camera_fov.movement_speed));}
-        if (main_inputs.a_key_pressed) {player_velocity = vector3_subtraction (player_velocity, vector3_scaling (main_camera_fov.side_vector, main_camera_fov.movement_speed));}
-        if (main_inputs.d_key_pressed) {player_velocity = vector3_addition (player_velocity, vector3_scaling (main_camera_fov.side_vector, main_camera_fov.movement_speed));}
-    }
-    return player_velocity;
+    return (vector3) {
+        main_camera_fov.horizontal_velocity.x,
+        main_camera_fov.vertical_velocity,
+        main_camera_fov.horizontal_velocity.z
+    };
 }
 
 void spawner_launch_sphere (float spherical_radius, float physical_mass, float launch_speed) {
@@ -50,6 +41,8 @@ void spawner_launch_sphere (float spherical_radius, float physical_mass, float l
     obj_per_scene [newly_spawned_object_index].friction_static = friction_static;
     obj_per_scene [newly_spawned_object_index].friction_kinetic = friction_kinetic;
     obj_per_scene [newly_spawned_object_index].colour = (vector3) {0.8f, 0.8f, 0.8f};
+    obj_per_scene [newly_spawned_object_index].static_state = true;
+    obj_per_scene [newly_spawned_object_index].inverse_mass = 0.0f;
 } void spawner_launch_cube (vector3 position, vector3 half_extensions, float physical_mass) {
     int newly_spawned_object_index = scene_add_cube (position, half_extensions, physical_mass);
     if (newly_spawned_object_index < 0) {return;} //SAO/SKF

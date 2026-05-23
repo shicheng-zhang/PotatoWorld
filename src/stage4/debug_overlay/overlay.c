@@ -73,22 +73,11 @@ GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
         else {
             char spawner_text [512];
             if (main_inputs.spawner_menu_level == 1) {
-                const char *spawn_type_text;
-                if (main_inputs.current_spawn_type == 0) {spawn_type_text = "Sphere";}
-                else {spawn_type_text = "Cube";}
-                snprintf (spawner_text, sizeof (spawner_text), "-- Spawner Menu --\n1: Sphere\n2: Cube\n3: Current Type: %s", spawn_type_text);
+                snprintf (spawner_text, sizeof (spawner_text), "-- Spawner Menu --\n1: Sphere Settings");
             } else if (main_inputs.spawner_menu_level == 2) {snprintf (spawner_text, sizeof (spawner_text), "-- Sphere Settings --\n1: Mass\n2: Radius");}
             else if (main_inputs.spawner_menu_level == 3) {snprintf (spawner_text, sizeof (spawner_text), "-- Mass Settings --\nCurrent Mass: %.2f kg\n\nUp/Down: +/- %.2f\nEnter: Save and Close", spawn_mass, adjustment_increment);}
             else if (main_inputs.spawner_menu_level == 4) {snprintf (spawner_text, sizeof (spawner_text), "-- Radius Settings --\nCurrent Radius: %.2f m\n\nUp/Down: +/- %.2f\nEnter: Save and Close", spawn_radius, adjustment_increment);}
-            else if (main_inputs.spawner_menu_level == 5) {snprintf (spawner_text, sizeof (spawner_text), "-- Cube Settings --\n1: Mass\n2: Size");}
-            else if (main_inputs.spawner_menu_level == 6) {snprintf (spawner_text, sizeof (spawner_text), "-- Cube Mass --\nCurrent Mass: %.2f kg\n\nUp/Down: +/- %.2f\nEnter: Save and Close", spawn_cube_mass, adjustment_increment);}
-            else if (main_inputs.spawner_menu_level == 7) {snprintf (spawner_text, sizeof (spawner_text), "-- Cube Size --\nCurrent Size: %.2f m\n\nUp/Down: +/- %.2f\nEnter: Save and Close", spawn_cube_extent, adjustment_increment);}
-            else if (main_inputs.spawner_menu_level == 8) {
-                const char *spawn_type_text;
-                if (main_inputs.current_spawn_type == 0) {spawn_type_text = "Sphere";}
-                else {spawn_type_text = "Cube";}
-                snprintf (spawner_text, sizeof (spawner_text), "-- Toggle Spawn Type --\nCurrent: %s\n\nUp/Down: Toggle\nEnter: Save and Close", spawn_type_text);
-            } gtk_label_set_text (GTK_LABEL (spawner_menu_label), spawner_text);
+            gtk_label_set_text (GTK_LABEL (spawner_menu_label), spawner_text);
             gtk_widget_show (spawner_menu_label);
         }
     } if (velocity_menu_label) {
@@ -131,14 +120,13 @@ GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
     } if (!debug_information_label) {return;}
     char information_text_buffer [1024];
     char game_mode_text [32];
-    if (main_inputs.is_debug_mode_active) {snprintf (game_mode_text, sizeof (game_mode_text), "DEBUG MODE");}
-    else {snprintf (game_mode_text, sizeof (game_mode_text), "GAME MODE");}
+    snprintf (game_mode_text, sizeof (game_mode_text), "GAME MODE");
     if ((selected_object < 0) || (selected_object >= object_count)) {
         const char *spawn_type_text;
         if (main_inputs.current_spawn_type == 0) {spawn_type_text = "sphere";}
         else {spawn_type_text = "cube";}
         snprintf (information_text_buffer, sizeof (information_text_buffer),
-                 "[%s] | No object selected | Shift: spawn %s | R-Click: select | 0: Toggle Mode | L/R Arr: change rate (%.2f)",
+                 "[%s] | No object selected | Shift: spawn %s | R-Click: select | L/R Arr: change rate (%.2f)",
                  game_mode_text, spawn_type_text, variable_change_rate);
         gtk_label_set_text (GTK_LABEL (debug_information_label), information_text_buffer);
         return;

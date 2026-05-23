@@ -2,7 +2,7 @@
 #define mouse_lock_h
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
-//Lock Cursor --> Actual Object and POV Movement Inside Engine
+//Lock Cursor - -> Actual Object and POV Movement Inside Engine
 void mouse_lock_enable (GtkWidget *window_widget);
 //Disable Cursor Lock
 void mouse_lock_disable (GtkWidget *window_widget);

@@ -10,6 +10,10 @@ extern int selected_object;
 int selector_ray_tracing (void);
 //Deselect object
 void clear_selection (void);
+//Get the position on the floor (y=0) where the camera is looking
+bool selector_get_floor_hit (vector3 *hit_position);
+//Get snapped position if near another cube
+bool selector_get_snapped_hit (vector3 *snapped_position, float snap_buffer_distance, float new_cube_half_extent);
 //Apply impulse to selected object in the view phase
 void selector_apply_force_impulse (float impulse_magnitude);
 #endif

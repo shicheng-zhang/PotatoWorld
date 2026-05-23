@@ -140,8 +140,8 @@ static void rb_integrate (rigidbody *rigid_body, float delta_time, float linear_
     rigid_body -> velocity = vector3_addition (rigid_body -> velocity, vector3_scaling (rigid_body -> acceleration, delta_time)); //Add currenty velocity to delta v
     //Air resistance increased slightly for stability
     rigid_body -> velocity = vector3_scaling (rigid_body -> velocity, linear_damping);
-    // Sleep Threshold, eliminates tiny jitters
-    if (vector3_length_squared (rigid_body -> velocity) < 0.0025f) {rigid_body -> velocity = vector3_zero ();}
+    //Sleep Threshold, eliminates tiny jitters
+    if (vector3_length_squared (rigid_body -> velocity) < 0.00005f) {rigid_body -> velocity = vector3_zero ();}
     //Calculate Position Standard
     rigid_body -> position = vector3_addition (rigid_body -> position, vector3_scaling (rigid_body -> velocity, delta_time)); //Add current position to delta d
     //Update Angular Acceleration Standard

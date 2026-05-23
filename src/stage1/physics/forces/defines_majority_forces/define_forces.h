@@ -42,12 +42,12 @@ static void force_applicant_friction_rolling (rigidbody *rigid_body, vector3 sur
     vector3 tangential_velocity = vector3_subtraction (velocity_at_contact_point, vector3_scaling (surface_normal, velocity_component_along_normal));
     float tangential_speed = vector3_length (tangential_velocity);
     if (tangential_speed > math_epsilon) {
-        //Kinetic Friction --> Resists contact sliding
+        //Kinetic Friction - -> Resists contact sliding
         vector3 kinetic_friction_force = vector3_scaling (vector3_normalisation (tangential_velocity), -kinetic_friction_coefficient * normal_force_magnitude);
         //Force at Contact Point (Torque Generation)
         rb_apply_forces_localised (rigid_body, kinetic_friction_force, vector3_addition (rigid_body -> position, relative_contact_vector));
     } else {
-        //Static Friction --> Neutralise tangent forces
+        //Static Friction - -> Neutralise tangent forces
         vector3 accumulated_tangential_force = vector3_subtraction (rigid_body -> force_accumulator, vector3_scaling (surface_normal, vector3_dot (rigid_body -> force_accumulator, surface_normal)));
         float accumulated_force_magnitude = vector3_length (accumulated_tangential_force);
         if (accumulated_force_magnitude < static_friction_coefficient * normal_force_magnitude) {
@@ -76,7 +76,7 @@ static void force_applicant_friction_rolling (rigidbody *rigid_body, vector3 sur
         vector3 accumulated_tangential_force = vector3_subtraction (rigid_body -> force_accumulator, vector3_scaling (surface_normal, vector3_dot (rigid_body -> force_accumulator, surface_normal))); //Accumulated force applied to existing net input for net force output applied on the object
         float accumulated_force_magnitude = vector3_length (accumulated_tangential_force);
         if (accumulated_force_magnitude < static_friction_coefficient * normal_force_magnitude) {
-            //Force applied < Force Static Friction --> No movement
+            //Force applied < Force Static Friction - -> No movement
             //Neutralise Sliding Force
             rb_apply_forces_perfect (rigid_body, vector3_scaling (accumulated_tangential_force, -1.0f));
             rigid_body -> velocity = vector3_zero ();
@@ -119,13 +119,13 @@ static state_energy force_to_system_energy_amount (rigidbody *rigid_body, vector
     //Ek rotational = 0.5fwIw
     vector3 angular_momentum = math3_multiplication_vector3 (math3_inverse (rigid_body -> inverse_inertia_system), rigid_body -> angular_velocity);
     energy_state.rotational_kinetic_energy = 0.5f * vector3_dot (rigid_body -> angular_velocity, angular_momentum);
-    //Ek --> total kinetic
+    //Ek - -> total kinetic
     energy_state.kinetic_energy = energy_state.linear_kinetic_energy + energy_state.rotational_kinetic_energy;
     //Epg (Y value in vectoring is height)
     energy_state.gravitational_potential_energy = rigid_body -> mass * fabsf (gravitational_acceleration.y) * rigid_body -> position.y;
-    //Eps --> calculated on a per spring basis, not included
+    //Eps - -> calculated on a per spring basis, not included
     energy_state.spring_potential_energy = 0.0f;
-    //Em --> total MEC
+    //Em - -> total MEC
     energy_state.mechanical_energy = energy_state.kinetic_energy + energy_state.gravitational_potential_energy + energy_state.spring_potential_energy;
     return energy_state;
 }

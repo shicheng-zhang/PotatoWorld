@@ -1,7 +1,7 @@
 #version 330 core
 layout (location = 0) in vec3 aPos; //Position of Sphere
 layout (location = 1) in vec3 aNormal; //Direction the surface faces
-uniform mat4 model; //Move the Ball to rb->position value
+uniform mat4 model; //Move the Ball to rb -> position value
 uniform mat4 viewframe; //Camera Facing and location
 uniform mat4 projection; //3D Projection
 uniform mat3 normal_matrix;

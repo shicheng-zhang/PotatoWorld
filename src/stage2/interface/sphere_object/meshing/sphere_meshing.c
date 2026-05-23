@@ -84,7 +84,7 @@ void init_sm_system (mesh *mesh_object, int horizontal_sections, int vertical_st
     //Indice Upload Count
     glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, mesh_object -> element_buffer_object);
     glBufferData (GL_ELEMENT_ARRAY_BUFFER, mesh_object -> index_count * sizeof (unsigned int), element_indices, GL_STATIC_DRAW);
-    //OpenGL attribute set --> affix certain attributes to 3D position statements
+    //OpenGL attribute set - -> affix certain attributes to 3D position statements
     glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof (float), (void*) 0);
     glEnableVertexAttribArray (0);
     //Normal attribute

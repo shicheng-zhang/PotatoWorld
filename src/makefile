@@ -25,8 +25,8 @@ source = stage1/root_gtk.c \
        stage5/scene_io/scene_saving.c \
        stage5/scene_io/scene_load.c \
 
-engine: $(source)
-	$(CC) $(flags) $(source) $(lib) -o engine
+game: $(source)
+	$(CC) $(flags) $(source) $(lib) -o game
 
 clean:
-	rm -f engine
+	rm -f game

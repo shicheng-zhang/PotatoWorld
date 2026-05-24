@@ -62,13 +62,24 @@ int selector_ray_tracing (void) {
         int near_axis = -1;
         float near_sign = 0;
         for (int axis = 0; axis < 3; axis++) {
-            float origin = (axis == 0) ? ray_origin.x : (axis == 1) ? ray_origin.y : ray_origin.z;
-            float dir = (axis == 0) ? ray_direction.x : (axis == 1) ? ray_direction.y : ray_direction.z;
-            float min = (axis == 0) ? box_min.x : (axis == 1) ? box_min.y : box_min.z;
-            float max = (axis == 0) ? box_max.x : (axis == 1) ? box_max.y : box_max.z;
-            if (fabsf (dir) < 1e-6f) {
-                if (origin < min || origin > max) { tmin = 1e31f; break; }
-            } else {
+            float origin;
+            if (axis == 0) {origin = ray_origin.x;}
+            else if (axis == 1) {origin = ray_origin.y;}
+            else {origin = ray_origin.z;}
+            float dir;
+            if (axis == 0) {dir = ray_direction.x;}
+            else if (axis == 1) {dir = ray_direction.y;}
+            else {dir = ray_direction.z;}
+            float min;
+            if (axis == 0) {min = box_min.x;}
+            else if (axis == 1) {min = box_min.y;}
+            else {min = box_min.z;}
+            float max;
+            if (axis == 0) {max = box_max.x;}
+            else if (axis == 1) {max = box_max.y;}
+            else {max = box_max.z;}
+            if (fabsf (dir) < 1e-6f) {if ((origin < min) || (origin > max)) {tmin = 1e31f; break;}}
+            else {
                 float invD = 1.0f / dir;
                 float t1 = (min - origin) * invD;
                 float t2 = (max - origin) * invD;
@@ -78,7 +89,9 @@ int selector_ray_tracing (void) {
                 if (t2 < tmax) tmax = t2;
             }
         } if (tmin <= tmax && tmax > 0) {
-            float t = (tmin < 0) ? tmax : tmin;
+            float t;
+            if (tmin < 0) {t = tmax;}
+            else {t = tmin;}
             if (t < closest_t) {
                 closest_t = t;
                 hit_found = true;

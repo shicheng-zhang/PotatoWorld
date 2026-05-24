@@ -9,6 +9,7 @@ static GtkWidget *menu_label = NULL;
 static GtkWidget *spawner_menu_label = NULL;
 static GtkWidget *velocity_menu_label = NULL;
 static GtkWidget *object_menu_label = NULL;
+static GtkWidget *pause_label = NULL;
 extern input_status main_inputs;
 extern camera main_camera_fov;
 extern float world_gravity_y;
@@ -21,6 +22,11 @@ extern int selected_object;
 extern float variable_change_rate;
 extern float jump_height;
 GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
+    // Add global CSS to make all labels in the overlay black
+    GtkCssProvider *css_provider = gtk_css_provider_new ();
+    gtk_css_provider_load_from_data (css_provider, "label { color: black; font-weight: bold; }", -1, NULL);
+    gtk_style_context_add_provider_for_screen (gdk_screen_get_default (), GTK_STYLE_PROVIDER (css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref (css_provider);
     //Debug Info
     GtkWidget *ui_overlay_container = gtk_overlay_new ();
     gtk_container_add (GTK_CONTAINER (ui_overlay_container), gl_drawing_area_widget);
@@ -58,23 +64,43 @@ GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
     gtk_widget_set_valign (object_menu_label, GTK_ALIGN_CENTER);
     gtk_overlay_add_overlay (GTK_OVERLAY (ui_overlay_container), object_menu_label);
     gtk_widget_hide (object_menu_label);
+    //Pause Label
+    pause_label = gtk_label_new ("");
+    gtk_widget_set_halign (pause_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign (pause_label, GTK_ALIGN_CENTER);
+    // Add CSS for visibility
+    gtk_widget_set_name (pause_label, "pause-label");
+    gtk_overlay_add_overlay (GTK_OVERLAY (ui_overlay_container), pause_label);
+    gtk_widget_hide (pause_label);
     return ui_overlay_container;
 } void overlay_update (void) {
     float adjustment_increment = variable_change_rate;
-    if (menu_label) {
+    if (pause_label) {
+        if (main_inputs.is_paused) {
+            gtk_label_set_text (GTK_LABEL (pause_label), "--- For Meiqi Only ---\nWhen I started programming this, I had no idea if I could finish it in time for you at all.\n\nI debated very long about how I should write my card to you, and I came to the conclusion that this was the best way. A Easter Egg. A secret, Just for you.\n\nNone of what you see here was just me, to get this thing up and running in 4 months AI helped me a lot, due credits to them.\n\nBut at least I made stage 1 all by myself, all the math belongs to me :)\n\nThis is for you, and only you. This game, and all that's inside. Yours to keep and play.\n\nOf course neglect the abysmal graphics of course.\n\n I do wish us happiness. I really do. I hope you want that for us as well.\n\nYou said that around me, you felt like you could be you, with no responsibilities or a care in the world.\n\nI hope I can be that for you for a very long time.\n\n17 Doesn't come easily. We have just that tiny year left. But what we have, by ourselves, is time. Lots of it.\n\nYours, most sincerely\nHappy Birthday, Meiqi. :)\n\n");
+            gtk_widget_show (pause_label);
+            // Hide other labels to focus on the message
+            if (menu_label) gtk_widget_hide (menu_label);
+            if (spawner_menu_label) gtk_widget_hide (spawner_menu_label);
+            if (velocity_menu_label) gtk_widget_hide (velocity_menu_label);
+            if (object_menu_label) gtk_widget_hide (object_menu_label);
+            if (crosshair_label) gtk_widget_hide (crosshair_label);
+            return;
+        } else {
+            gtk_widget_hide (pause_label);
+            if (crosshair_label) gtk_widget_show (crosshair_label);
+        }
+    } if (menu_label) {
         if (main_inputs.is_menu_open) {
             gtk_label_set_text (GTK_LABEL (menu_label), "1: Save current state\n2: Load previous state\n3: Exit");
             gtk_widget_show (menu_label);
-        } else {
-            gtk_widget_hide (menu_label);
-        }
+        } else {gtk_widget_hide (menu_label);}
     } if (spawner_menu_label) {
         if (main_inputs.spawner_menu_level == 0) {gtk_widget_hide (spawner_menu_label);}
         else {
             char spawner_text [512];
-            if (main_inputs.spawner_menu_level == 1) {
-                snprintf (spawner_text, sizeof (spawner_text), "-- Spawner Menu --\n1: Sphere Settings");
-            } else if (main_inputs.spawner_menu_level == 2) {snprintf (spawner_text, sizeof (spawner_text), "-- Sphere Settings --\n1: Mass\n2: Radius");}
+            if (main_inputs.spawner_menu_level == 1) {snprintf (spawner_text, sizeof (spawner_text), "-- Spawner Menu --\n1: Sphere Settings");}
+            else if (main_inputs.spawner_menu_level == 2) {snprintf (spawner_text, sizeof (spawner_text), "-- Sphere Settings --\n1: Mass\n2: Radius");}
             else if (main_inputs.spawner_menu_level == 3) {snprintf (spawner_text, sizeof (spawner_text), "-- Mass Settings --\nCurrent Mass: %.2f kg\n\nUp/Down: +/- %.2f\nEnter: Save and Close", spawn_mass, adjustment_increment);}
             else if (main_inputs.spawner_menu_level == 4) {snprintf (spawner_text, sizeof (spawner_text), "-- Radius Settings --\nCurrent Radius: %.2f m\n\nUp/Down: +/- %.2f\nEnter: Save and Close", spawn_radius, adjustment_increment);}
             gtk_label_set_text (GTK_LABEL (spawner_menu_label), spawner_text);
@@ -126,8 +152,8 @@ GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
         if (main_inputs.current_spawn_type == 0) {spawn_type_text = "sphere";}
         else {spawn_type_text = "cube";}
         snprintf (information_text_buffer, sizeof (information_text_buffer),
-                 "[%s] | No object selected | Shift: spawn %s | R-Click: select | L/R Arr: change rate (%.2f)",
-                 game_mode_text, spawn_type_text, variable_change_rate);
+                 "[%s] | L-Click: remove | R-Click: spawn %s | M-Click: select | Shift: toggle type ",
+                 game_mode_text, spawn_type_text);
         gtk_label_set_text (GTK_LABEL (debug_information_label), information_text_buffer);
         return;
     } rigidbody *selected_rigid_body = &obj_per_scene [selected_object];
@@ -139,13 +165,11 @@ GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
     if (selected_rigid_body -> static_state) {static_status_text = "(Static)";}
     else {static_status_text = "(Dynamic)";}
     snprintf (information_text_buffer, sizeof (information_text_buffer),
-            "[%s] | %s [%d] %s | Pos: (%.1f, %.1f, %.1f) | Speed: %.2f | E: Menu | F: Impulse | M-Click: remove",
+            "[%s] | %s [%d] %s | E: settings | F: impulse | L-Click: remove | R-Click: spawn",
             game_mode_text,
             object_type_text,
             selected_object,
-            static_status_text,
-            selected_rigid_body -> position.x, selected_rigid_body -> position.y, selected_rigid_body -> position.z,
-            selected_object_speed
+            static_status_text
         );
     gtk_label_set_text (GTK_LABEL (debug_information_label), information_text_buffer);
 }

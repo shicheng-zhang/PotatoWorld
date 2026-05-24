@@ -26,6 +26,7 @@ static struct {
     GLint object_colour_location;
     GLint camera_position_location;
     GLint light_position_location;
+    GLint is_cube_location;
 } shader_uniform_location_registry;
 mesh sphere_mesh;
 static int render_init_status = 0;
@@ -97,6 +98,7 @@ void render_init () {
     shader_uniform_location_registry.object_colour_location = glGetUniformLocation (shaders_program_total, "object_colour");
     shader_uniform_location_registry.camera_position_location = glGetUniformLocation (shaders_program_total, "camera_position");
     shader_uniform_location_registry.light_position_location = glGetUniformLocation (shaders_program_total, "light_position");
+    shader_uniform_location_registry.is_cube_location = glGetUniformLocation (shaders_program_total, "is_cube");
     grid_init (&main_grid, 250, 5);
     init_sm_system (&sphere_mesh, 32, 32);
     cube_meshing_init ();
@@ -105,7 +107,7 @@ void render_init () {
     render_init ();
     //View Status, Clear SCN
     glViewport (0, 0, widget_width, widget_height);
-    glClearColor (0.1f, 0.2f, 0.35f, 1.0f);
+    glClearColor (0.45f, 0.65f, 0.85f, 1.0f);
     glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram (shaders_program_total);
     //Projection Matrix, 4D Matrix
@@ -122,6 +124,7 @@ void render_init () {
     glUniform3f (shader_uniform_location_registry.camera_position_location, main_camera_fov.position.x, main_camera_fov.position.y, main_camera_fov.position.z);
     //Light Position (Stronger overhead lighting)
     glUniform3f (shader_uniform_location_registry.light_position_location, 20.0f, 40.0f, 20.0f);
+    glUniform1i (shader_uniform_location_registry.is_cube_location, 0); // Default to no borders
     //Draw Each Object in Question
     grid_render (&main_grid, shaders_program_total, view_matrix, projection_matrix);
     glUseProgram (shaders_program_total); // Ensure we are back to our main program after grid_render
@@ -135,10 +138,11 @@ void render_init () {
             preview_cube.orientation = (vector4){1, 0, 0, 0};
             preview_cube.type = object_cube;
             preview_cube.half_extensions = (vector3){spawn_cube_extent, spawn_cube_extent, spawn_cube_extent};
-            wireframe_render_object (shaders_program_total, view_matrix, projection_matrix, &preview_cube, (vector3){1.0f, 1.0f, 0.0f});
+            // Only render preview if within 10-meter range
+            vector3 diff = vector3_subtraction (snapped_pos, main_camera_fov.position);
+            if (vector3_length_squared (diff) < 100.0f) {wireframe_render_object (shaders_program_total, view_matrix, projection_matrix, &preview_cube, (vector3) {1.0f, 1.0f, 0.0f});}
         }
-    }
-    for (int object_index = 0; object_index < object_count; object_index++) {
+    } for (int object_index = 0; object_index < object_count; object_index++) {
         rigidbody *rigid_body = &obj_per_scene [object_index];
         //Model Matrix - -> Position + Orientation
         math4 translation_matrix = math4_translation (rigid_body -> position);
@@ -151,6 +155,8 @@ void render_init () {
         math4_to_flat_array (model_matrix, model_matrix_flat_array);
         //Colour Uniform of the Objects
         glUniform3f (shader_uniform_location_registry.object_colour_location, rigid_body -> colour.x, rigid_body -> colour.y, rigid_body -> colour.z);
+        if (rigid_body -> type == object_cube) {glUniform1i (shader_uniform_location_registry.is_cube_location, 1);}
+        else {glUniform1i (shader_uniform_location_registry.is_cube_location, 0);}
         glUniformMatrix4fv (shader_uniform_location_registry.model_matrix_location, 1, GL_FALSE, model_matrix_flat_array);
         math3 normal_calculation_matrix_3x3;
         for (int row_index = 0; row_index < 3; row_index++) {

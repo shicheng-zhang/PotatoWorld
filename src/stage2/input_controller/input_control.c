@@ -7,7 +7,7 @@
 extern camera main_camera_fov;
 extern input_status main_inputs;
 void initialise_input (input_status *input_state) {
-    // Keyboard Movement Inputs
+    //Keyboard Movement Inputs
     input_state -> w_key_pressed = false;
     input_state -> a_key_pressed = false;
     input_state -> s_key_pressed = false;
@@ -16,17 +16,17 @@ void initialise_input (input_status *input_state) {
     input_state -> shift_key_pressed = false;
     input_state -> escape_key_pressed = false;
     input_state -> f_key_pressed = false;
-    // Object manipulation
+    //Object manipulation
     input_state -> i_key_pressed = false;
     input_state -> j_key_pressed = false;
     input_state -> k_key_pressed = false;
     input_state -> l_key_pressed = false;
-    // Menu logic
+    //Menu logic
     input_state -> is_menu_open = false;
     input_state -> menu_1_pressed = false;
     input_state -> menu_2_pressed = false;
     input_state -> menu_3_pressed = false;
-    // Spawn Object Status
+    //Spawn Object Status
     input_state -> spawner_menu_level = 0;
     input_state -> velocity_menu_level = 0;
     input_state -> object_menu_level = 0;
@@ -37,13 +37,15 @@ void initialise_input (input_status *input_state) {
     input_state -> right_arrow_pressed = false;
     input_state -> enter_key_pressed = false;
     input_state -> e_key_pressed = false;
-    // Mouse
+    //Mouse
     input_state -> is_mouse_locked = false;
+    input_state -> is_paused = false;
     input_state -> left_mouse_button_clicked = false;
     input_state -> right_mouse_button_clicked = false;
     input_state -> middle_mouse_button_clicked = false;
     input_state -> mouse_delta_x = 0.0f;
     input_state -> mouse_delta_y = 0.0f;
+    input_state -> suppress_mouse_delta = false;
 } gboolean on_keypress (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
     (void) widget;
     input_status *input_state = &main_inputs;
@@ -75,55 +77,59 @@ void initialise_input (input_status *input_state) {
         input_state -> is_menu_open = false;
         input_state -> velocity_menu_level = 0;
         input_state -> object_menu_level = 0;
-        input_state -> spawner_menu_level = (input_state -> spawner_menu_level > 0) ? 0 : 1;
+        if (input_state -> spawner_menu_level > 0) {input_state -> spawner_menu_level = 0;}
+        else {input_state -> spawner_menu_level = 1;}
     } if (event -> keyval == GDK_KEY_7) {
         input_state -> is_menu_open = false;
         input_state -> spawner_menu_level = 0;
         input_state -> object_menu_level = 0;
-        input_state -> velocity_menu_level = (input_state -> velocity_menu_level > 0) ? 0 : 1;
+        if (input_state -> velocity_menu_level > 0) {input_state -> velocity_menu_level = 0;}
+        else {input_state -> velocity_menu_level = 1;}
     } //Spawner Menu Logic (8)
     if (input_state -> spawner_menu_level == 1) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> spawner_menu_level = 2; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> spawner_menu_level = 2;}
     } else if (input_state -> spawner_menu_level == 2) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> spawner_menu_level = 3; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> spawner_menu_level = 4; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> spawner_menu_level = 3;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> spawner_menu_level = 4;}
     } //Velocity Menu Logic (7)
     if (input_state -> velocity_menu_level == 1) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> velocity_menu_level = 2; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> velocity_menu_level = 10; }
-        if (event -> keyval == GDK_KEY_3) { input_state -> velocity_menu_level = 20; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> velocity_menu_level = 2;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> velocity_menu_level = 10;}
+        if (event -> keyval == GDK_KEY_3) {input_state -> velocity_menu_level = 20;}
     } else if (input_state -> velocity_menu_level == 2) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> velocity_menu_level = 3; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> velocity_menu_level = 4; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> velocity_menu_level = 3;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> velocity_menu_level = 4;}
     } else if (input_state -> velocity_menu_level == 20) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> velocity_menu_level = 21; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> velocity_menu_level = 22; }
-        if (event -> keyval == GDK_KEY_3) { input_state -> velocity_menu_level = 23; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> velocity_menu_level = 21;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> velocity_menu_level = 22;}
+        if (event -> keyval == GDK_KEY_3) {input_state -> velocity_menu_level = 23;}
     } else if (input_state -> velocity_menu_level == 10) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> velocity_menu_level = 11; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> velocity_menu_level = 12; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> velocity_menu_level = 11;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> velocity_menu_level = 12;}
     } //Object Menu Logic (E)
     if (input_state -> object_menu_level == 1) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> object_menu_level = 2; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> object_menu_level = 3; }
-        if (event -> keyval == GDK_KEY_3) { input_state -> object_menu_level = 4; }
-        if (event -> keyval == GDK_KEY_4) { input_state -> object_menu_level = 5; }
+        if (event -> keyval == GDK_KEY_1) {input_state -> object_menu_level = 2;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> object_menu_level = 3;}
+        if (event -> keyval == GDK_KEY_3) {input_state -> object_menu_level = 4;}
+        if (event -> keyval == GDK_KEY_4) {input_state -> object_menu_level = 5;}
     } if (input_state -> is_menu_open) {
-        if (event -> keyval == GDK_KEY_1) { input_state -> menu_1_pressed = true; }
-        if (event -> keyval == GDK_KEY_2) { input_state -> menu_2_pressed = true; }
-        if (event -> keyval == GDK_KEY_3) { input_state -> menu_3_pressed = true; }
-    } return FALSE;
+        if (event -> keyval == GDK_KEY_1) {input_state -> menu_1_pressed = true;}
+        if (event -> keyval == GDK_KEY_2) {input_state -> menu_2_pressed = true;}
+        if (event -> keyval == GDK_KEY_3) {input_state -> menu_3_pressed = true;}
+    } //Pause and Easter Egg (1)
+    if ((event -> keyval == GDK_KEY_1) && (!input_state -> is_menu_open) && (input_state -> spawner_menu_level == 0) && (input_state -> velocity_menu_level == 0) && (input_state -> object_menu_level == 0)) {input_state -> is_paused = !(input_state -> is_paused);}
+    return FALSE;
 } gboolean on_key_released (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
     (void) widget;
     input_status *input_state = &main_inputs;
-    if (event -> keyval == GDK_KEY_w) { input_state -> w_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_a) { input_state -> a_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_s) { input_state -> s_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_d) { input_state -> d_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_i) { input_state -> i_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_j) { input_state -> j_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_k) { input_state -> k_key_pressed = false; }
-    if (event -> keyval == GDK_KEY_l) { input_state -> l_key_pressed = false; }
+    if (event -> keyval == GDK_KEY_w) {input_state -> w_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_a) {input_state -> a_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_s) {input_state -> s_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_d) {input_state -> d_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_i) {input_state -> i_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_j) {input_state -> j_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_k) {input_state -> k_key_pressed = false;}
+    if (event -> keyval == GDK_KEY_l) {input_state -> l_key_pressed = false;}
     if ((event -> keyval == GDK_KEY_Shift_L) || (event -> keyval == GDK_KEY_Shift_R)) {input_state -> shift_key_pressed = false;}
     if (event -> keyval == GDK_KEY_space) {input_state -> space_key_pressed = false;}
     return FALSE;
@@ -131,23 +137,45 @@ void initialise_input (input_status *input_state) {
     (void) user_data_stored;
     input_status *input_state = &main_inputs;
     if (input_state -> is_mouse_locked) {
-        int width = gtk_widget_get_allocated_width (widget);
-        int height = gtk_widget_get_allocated_height (widget);
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int currentX = (int) event -> x;
-        int currentY = (int) event -> y;
-        if ((currentX == centerX) && (currentY == centerY)) {return FALSE;}
-        input_state -> mouse_delta_x = (float) (currentX - centerX);
-        input_state -> mouse_delta_y = (float) (currentY - centerY);
-        mouse_lock_reset_centre (widget);
+        static int last_warp_x = -1;
+        static int last_warp_y = -1;
+        int current_mouse_x = (int) event -> x_root;
+        int current_mouse_y = (int) event -> y_root;
+        if ((current_mouse_x == last_warp_x) && (current_mouse_y == last_warp_y)) {return FALSE;}
+        if (input_state -> suppress_mouse_delta) {
+            last_warp_x = current_mouse_x;
+            last_warp_y = current_mouse_y;
+            return FALSE;
+        } int widget_width  = gtk_widget_get_allocated_width  (widget);
+        int widget_height = gtk_widget_get_allocated_height (widget);
+        int center_x = widget_width  / 2;
+        int center_y = widget_height / 2;
+        int screen_origin_x, screen_origin_y;
+        gdk_window_get_origin (gtk_widget_get_window (widget), &screen_origin_x, &screen_origin_y);
+        int screen_center_x = screen_origin_x + center_x;
+        int screen_center_y = screen_origin_y + center_y;
+        int delta_x = current_mouse_x - screen_center_x;
+        int delta_y = current_mouse_y - screen_center_y;
+        int half_w = widget_width  / 2;
+        int half_h = widget_height / 2;
+        if (delta_x >  half_w) {delta_x =  half_w;}
+        if (delta_x < -half_w) {delta_x = -half_w;}
+        if (delta_y >  half_h) {delta_y =  half_h;}
+        if (delta_y < -half_h) {delta_y = -half_h;}
+        if ((delta_x != 0) || (delta_y != 0)) {
+            input_state -> mouse_delta_x = (float) delta_x;
+            input_state -> mouse_delta_y = (float) delta_y;
+            last_warp_x = screen_center_x;
+            last_warp_y = screen_center_y;
+            mouse_lock_reset_centre (widget);
+        }
     } return FALSE;
 } gboolean on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
     (void) widget;
     input_status *input_state = &main_inputs;
-    if (event -> button == 1) { input_state -> left_mouse_button_clicked = true; }
-    if (event -> button == 2) { input_state -> middle_mouse_button_clicked = true; }
-    if (event -> button == 3) { input_state -> right_mouse_button_clicked = true; }
+    if (event -> button == 1) {input_state -> left_mouse_button_clicked = true;}
+    if (event -> button == 2) {input_state -> middle_mouse_button_clicked = true;}
+    if (event -> button == 3) {input_state -> right_mouse_button_clicked = true;}
     if (!input_state -> is_mouse_locked) {
         mouse_lock_enable (gtk_widget_get_toplevel (widget));
         input_state -> is_mouse_locked = true;

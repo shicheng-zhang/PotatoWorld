@@ -16,6 +16,7 @@ int object_count = 0;
 int object_capacity = 0;
 //World Physics Globals
 float world_gravity_y = -9.81f;
+float character_gravity_multiplier = 3.0f;
 float world_drag_coefficient = 0.99f; // Used in pow (drag, delta)
 float world_surface_friction_static = 0.2f;
 float world_surface_friction_kinetic = 0.1f;
@@ -32,6 +33,7 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         }
     }
 } float open_numerical_input_dialog (GtkWidget *parent, const char *title, float current_value) {
+    main_inputs.suppress_mouse_delta = true;
     GtkWidget *dialog = gtk_dialog_new_with_buttons (
         title,
         GTK_WINDOW (parent),
@@ -76,12 +78,11 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
     if (!status_dir_checked) {mkdir ("status", 0755); status_dir_checked = 1;}
     frame_timer_update (&main_timer);
     float frame_delta_time = main_timer.delta_time;
-    //Camera Movements
-    if (main_inputs.w_key_pressed) {camera_move_forward (&main_camera_fov, frame_delta_time);}
-    if (main_inputs.a_key_pressed) {camera_move_left (&main_camera_fov, frame_delta_time);}
-    if (main_inputs.s_key_pressed) {camera_move_backward (&main_camera_fov, frame_delta_time);}
-    if (main_inputs.d_key_pressed) {camera_move_right (&main_camera_fov, frame_delta_time);}
-    //Perspective Steering
+    if (main_inputs.is_paused) {
+        overlay_update ();
+        return TRUE;
+    } //Input handling and character logic into physics sub-steps for robustness
+    //Mouse perspective steering remains here as is independent of integration steps
     float perspective_steering_sensitivity = 0.12f;
     if (main_inputs.is_mouse_locked) {
         main_camera_fov.yaw += main_inputs.mouse_delta_x * perspective_steering_sensitivity;
@@ -91,72 +92,6 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
     } if (main_camera_fov.pitch > 89.0f) {main_camera_fov.pitch = 89.0f;}
     if (main_camera_fov.pitch < -89.0f) {main_camera_fov.pitch = -89.0f;}
     camera_update_vectors (&main_camera_fov);
-    //Character Logic
-    float horizontal_friction = 8.0f;
-    main_camera_fov.horizontal_velocity.x -= main_camera_fov.horizontal_velocity.x * horizontal_friction * frame_delta_time;
-    main_camera_fov.horizontal_velocity.z -= main_camera_fov.horizontal_velocity.z * horizontal_friction * frame_delta_time;
-    main_camera_fov.position.x += main_camera_fov.horizontal_velocity.x * frame_delta_time;
-    main_camera_fov.position.z += main_camera_fov.horizontal_velocity.z * frame_delta_time;
-    main_camera_fov.vertical_velocity += world_gravity_y * frame_delta_time;
-    main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time;
-    float ground_level = 2.0f;
-    bool is_grounded = false;
-    if (main_camera_fov.position.y <= ground_level) {
-        main_camera_fov.position.y = ground_level;
-        is_grounded = true;
-    } //Check for standing on cubes
-    // Check for standing on cubes — rotation-aware, fall-speed-safe
-    // Player-cube collision — treat player as a sphere at body centre, radius 0.4
-    // Eye height is 2.0 so body centre is at position.y - 1.0
-    float player_radius = 0.4f;
-    rigidbody player_sphere;
-    player_sphere.type = object_sphere;
-    player_sphere.radius = player_radius;
-    player_sphere.inverse_mass = 1.0f;
-    player_sphere.mass = 1.0f;
-    for (int i = 0; i < object_count; i++) {
-        rigidbody *rb = &obj_per_scene [i];
-        if (rb -> type != object_cube) {continue;}
-        // Run the test twice — once for the feet sphere, once for the body sphere
-        // Feet at position.y - 1.8 (near floor contact), body at position.y - 1.0
-        float test_offsets [2] = {-1.8f, -1.0f};
-        for (int t = 0; t < 2; t++) {
-            player_sphere.position = (vector3) {
-                main_camera_fov.position.x,
-                main_camera_fov.position.y + test_offsets [t],
-                main_camera_fov.position.z
-            }; collision_data cd;
-            if (!collision_sphere_cube (&player_sphere, rb, &cd)) {continue;}
-            // Push player out along the collision normal
-            // Normal in collision_sphere_cube points sphere -> cube, so negate to push player away
-            vector3 push = vector3_scaling (cd.normal_vector, -cd.penetration_contact);
-            main_camera_fov.position.x += push.x;
-            main_camera_fov.position.y += push.y;
-            main_camera_fov.position.z += push.z;
-            // If the push has an upward component the player landed on a surface
-            if (push.y > 0.01f && main_camera_fov.vertical_velocity < 0.0f) {
-                main_camera_fov.vertical_velocity = 0.0f;
-                is_grounded = true;
-            } // If the push is mostly horizontal, kill velocity in that direction (wall stop)
-            if ((fabsf (push.x) > fabsf (push.y)) || (fabsf (push.z) > fabsf (push.y))) {
-                float vdotn = main_camera_fov.horizontal_velocity.x * (-cd.normal_vector.x) + main_camera_fov.horizontal_velocity.z * (-cd.normal_vector.z);
-                if (vdotn < 0.0f) {
-                    main_camera_fov.horizontal_velocity.x -= vdotn * (-cd.normal_vector.x);
-                    main_camera_fov.horizontal_velocity.z -= vdotn * (-cd.normal_vector.z);
-                }
-            }
-        }
-    } if (is_grounded) {
-        if (main_camera_fov.vertical_velocity < 0.0f) {main_camera_fov.vertical_velocity = 0.0f;}
-        if (main_inputs.space_key_pressed) {
-            float jump_velocity = sqrtf (2.0f * fabsf (world_gravity_y) * jump_height);
-            main_camera_fov.vertical_velocity = jump_velocity;
-            main_inputs.space_key_pressed = false;
-        }
-    } if (main_camera_fov.position.x < -250.0f) {main_camera_fov.position.x = -250.0f;}
-    if (main_camera_fov.position.x > 250.0f) {main_camera_fov.position.x = 250.0f;}
-    if (main_camera_fov.position.z < -250.0f) {main_camera_fov.position.z = -250.0f;}
-    if (main_camera_fov.position.z > 250.0f) {main_camera_fov.position.z = 250.0f;}
     //Mouse, Escape, E, F key bindings and actions
     if (main_inputs.escape_key_pressed) {
         if (main_inputs.is_mouse_locked) {
@@ -169,24 +104,30 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         main_inputs.middle_mouse_button_clicked = false;
     } // Right Click: Spawn Object
     if (main_inputs.right_mouse_button_clicked) {
-        if (main_inputs.current_spawn_type == 0) {
-            spawner_launch_sphere (spawn_radius, spawn_mass, spawn_speed);
-        } else {
+        if (main_inputs.current_spawn_type == 0) {spawner_launch_sphere (spawn_radius, spawn_mass, spawn_speed);}
+        else {
             vector3 snapped_pos;
             float snap_buffer = spawn_cube_extent * 4.0f; // 2 block lengths
             if (selector_get_snapped_hit (&snapped_pos, snap_buffer, spawn_cube_extent)) {
-                spawner_static_cube (snapped_pos, (vector3){spawn_cube_extent, spawn_cube_extent, spawn_cube_extent}, spawn_cube_mass);
+                // Range check for spawning
+                vector3 diff = vector3_subtraction (snapped_pos, main_camera_fov.position);
+                //10 m range for object spawning
+                if (vector3_length_squared (diff) < 100.0f) {spawner_static_cube (snapped_pos, (vector3){spawn_cube_extent, spawn_cube_extent, spawn_cube_extent}, spawn_cube_mass);}
             }
         } main_inputs.right_mouse_button_clicked = false;
     } // Left Click: Remove Object under crosshair
     if (main_inputs.left_mouse_button_clicked) {
         int hit_object = selector_ray_tracing ();
         if (hit_object >= 0) {
-            remove_joints_from_object (hit_object);
-            for (int object_index = hit_object; object_index < object_count - 1; object_index++) {obj_per_scene [object_index] = obj_per_scene [object_index + 1];}
-            object_count -= 1;
-            if (selected_object == hit_object) {selected_object = -1;}
-            else if (selected_object > hit_object) {selected_object--;}
+            // Range check for removal
+            vector3 diff = vector3_subtraction (obj_per_scene [hit_object].position, main_camera_fov.position);
+            if (vector3_length_squared (diff) < 100.0f) { // 10 meter range
+                remove_joints_from_object (hit_object);
+                for (int object_index = hit_object; object_index < object_count - 1; object_index++) {obj_per_scene [object_index] = obj_per_scene [object_index + 1];}
+                object_count -= 1;
+                if (selected_object == hit_object) {selected_object = -1;}
+                else if (selected_object > hit_object) {selected_object--;}
+            }
         } main_inputs.left_mouse_button_clicked = false;
     } if (main_inputs.e_key_pressed) {
         if (selected_object >= 0) {
@@ -198,26 +139,27 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
     } if (main_inputs.f_key_pressed) {
         if (selected_object >= 0) {selector_apply_force_impulse (250.0f);} //Increased as cube friction is far higher
         main_inputs.f_key_pressed = false;
-    } // Shift: Toggle Spawn Type
+    } //Shift: Toggle Spawn Type
     static bool shift_previously_pressed = false;
     if (main_inputs.shift_key_pressed) {
         if (!shift_previously_pressed) {
             if (main_inputs.current_spawn_type == 0) {main_inputs.current_spawn_type = 1;}
             else {main_inputs.current_spawn_type = 0;}
         } shift_previously_pressed = true;
-    } else {
-        shift_previously_pressed = false;
-    } //Scene Saving, 9 Key bindings
+    } else {shift_previously_pressed = false;}
+    //Scene Saving, 9 Key bindings
     if (main_inputs.menu_1_pressed) {save_scene ("status/scene.dat"); main_inputs.menu_1_pressed = false; main_inputs.is_menu_open = false;}
     if (main_inputs.menu_2_pressed) {scene_loading ("status/scene.dat"); main_inputs.menu_2_pressed = false; main_inputs.is_menu_open = false;}
     if (main_inputs.menu_3_pressed) {main_inputs.menu_3_pressed = false; gtk_main_quit ();}
-    // Spawner Menu Logic
+    //Spawner Menu Logic
     if (main_inputs.spawner_menu_level == 3) {
         spawn_mass = open_numerical_input_dialog (parent_window, "Sphere Mass (kg)", spawn_mass);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (spawn_mass < 0.01f) {spawn_mass = 0.01f;}
         main_inputs.spawner_menu_level = 2;
     } else if (main_inputs.spawner_menu_level == 4) {
         spawn_radius = open_numerical_input_dialog (parent_window, "Sphere Radius (m)", spawn_radius);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (spawn_radius < 0.01f) {spawn_radius = 0.01f;}
         main_inputs.spawner_menu_level = 2;
     } if (main_inputs.spawner_menu_level == 8) {
@@ -230,31 +172,38 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
     } // User Mechanics Menu Logic
     if (main_inputs.velocity_menu_level == 3) {
         spawn_speed = open_numerical_input_dialog (parent_window, "Spawn Speed (m/s)", spawn_speed);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (spawn_speed < 0.0f) {spawn_speed = 0.0f;}
         main_inputs.velocity_menu_level = 2;
     } else if (main_inputs.velocity_menu_level == 4) {
         world_surface_friction_kinetic = open_numerical_input_dialog (parent_window, "Spawn Friction (Kinetic)", world_surface_friction_kinetic);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (world_surface_friction_kinetic < 0.0f) {world_surface_friction_kinetic = 0.0f;}
         world_surface_friction_static = world_surface_friction_kinetic + 0.1f;
         main_inputs.velocity_menu_level = 2;
     } else if (main_inputs.velocity_menu_level == 11) {
         main_camera_fov.movement_speed = open_numerical_input_dialog (parent_window, "Camera Speed", main_camera_fov.movement_speed);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (main_camera_fov.movement_speed < 0.01f) {main_camera_fov.movement_speed = 0.01f;}
         main_inputs.velocity_menu_level = 10;
     } else if (main_inputs.velocity_menu_level == 12) {
         jump_height = open_numerical_input_dialog (parent_window, "Jump Height (m)", jump_height);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (jump_height < 0.1f) {jump_height = 0.1f;}
         main_inputs.velocity_menu_level = 10;
     } else if (main_inputs.velocity_menu_level == 21) {
         world_gravity_y = open_numerical_input_dialog (parent_window, "World Gravity (m/s^2)", world_gravity_y);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         main_inputs.velocity_menu_level = 20;
     } else if (main_inputs.velocity_menu_level == 22) {
         world_drag_coefficient = open_numerical_input_dialog (parent_window, "World Drag Coefficient", world_drag_coefficient);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (world_drag_coefficient > 1.0f) {world_drag_coefficient = 1.0f;}
         if (world_drag_coefficient < 0.1f) {world_drag_coefficient = 0.1f;}
         main_inputs.velocity_menu_level = 20;
     } else if (main_inputs.velocity_menu_level == 23) {
         world_surface_friction_kinetic = open_numerical_input_dialog (parent_window, "World Surface Friction", world_surface_friction_kinetic);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (world_surface_friction_kinetic < 0.0f) {world_surface_friction_kinetic = 0.0f;}
         world_surface_friction_static = world_surface_friction_kinetic + 0.1f;
         main_inputs.velocity_menu_level = 20;
@@ -262,6 +211,7 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
     if (main_inputs.object_menu_level == 2) {
         rigidbody *selected_rigid_body = &obj_per_scene [selected_object];
         selected_rigid_body -> mass = open_numerical_input_dialog (parent_window, "Selected Object Mass", selected_rigid_body -> mass);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (selected_rigid_body -> mass < 0.01f) {selected_rigid_body -> mass = 0.01f;}
         selected_rigid_body -> inverse_mass = 1.0f / selected_rigid_body -> mass;
         if (selected_rigid_body -> type == object_sphere) {rigidbody_update_inertia_sphere (selected_rigid_body);}
@@ -271,12 +221,14 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         rigidbody *selected_rigid_body = &obj_per_scene [selected_object];
         if (selected_rigid_body -> type == object_sphere) {
             selected_rigid_body -> radius = open_numerical_input_dialog (parent_window, "Selected Object Radius", selected_rigid_body -> radius);
+            mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
             if (selected_rigid_body -> radius < 0.01f) {selected_rigid_body -> radius = 0.01f;}
             rigidbody_update_inertia_sphere (selected_rigid_body);
         } main_inputs.object_menu_level = 1;
     } else if (main_inputs.object_menu_level == 4) {
         rigidbody *selected_rigid_body = &obj_per_scene [selected_object];
         selected_rigid_body -> friction_kinetic = open_numerical_input_dialog (parent_window, "Selected Object Friction", selected_rigid_body -> friction_kinetic);
+        mouse_lock_reacquire (gtk_widget_get_toplevel (GTK_WIDGET (parent_window)));
         if (selected_rigid_body -> friction_kinetic < 0.0f) {selected_rigid_body -> friction_kinetic = 0.0f;}
         selected_rigid_body -> friction_static = selected_rigid_body -> friction_kinetic + 0.1f;
         main_inputs.object_menu_level = 1;
@@ -306,6 +258,63 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
     } if (persistent_collision_pairs) {detected_collision_count = broadphase_generate_pairing (persistent_collision_pairs, persistent_pairs_capacity);}
     //Simulation Substep
     for (int sub_iteration = 0; sub_iteration < physics_sub_steps; sub_iteration++) {
+        // Character Movement and Physics
+        if (main_inputs.w_key_pressed) {camera_move_forward (&main_camera_fov, sub_step_dt);}
+        if (main_inputs.a_key_pressed) {camera_move_left (&main_camera_fov, sub_step_dt);}
+        if (main_inputs.s_key_pressed) {camera_move_backward (&main_camera_fov, sub_step_dt);}
+        if (main_inputs.d_key_pressed) {camera_move_right (&main_camera_fov, sub_step_dt);}
+        float horizontal_friction = 8.0f;
+        main_camera_fov.horizontal_velocity.x -= main_camera_fov.horizontal_velocity.x * horizontal_friction * sub_step_dt;
+        main_camera_fov.horizontal_velocity.z -= main_camera_fov.horizontal_velocity.z * horizontal_friction * sub_step_dt;
+        main_camera_fov.position.x += main_camera_fov.horizontal_velocity.x * sub_step_dt;
+        main_camera_fov.position.z += main_camera_fov.horizontal_velocity.z * sub_step_dt;
+        main_camera_fov.vertical_velocity += world_gravity_y * character_gravity_multiplier * sub_step_dt;
+        main_camera_fov.position.y += main_camera_fov.vertical_velocity * sub_step_dt;
+        float eye_height = 1.8f; // Eye level for a character ~2m tall
+        bool is_grounded = false;
+        if (main_camera_fov.position.y <= eye_height) {
+            main_camera_fov.position.y = eye_height;
+            is_grounded = true;
+        } // Multi-sphere collision for character (Feet, Torso, Head)
+        float player_radius = 0.4f;
+        rigidbody player_sphere;
+        player_sphere.type = object_sphere;
+        player_sphere.radius = player_radius;
+        player_sphere.inverse_mass = 1.0f;
+        player_sphere.mass = 1.0f;
+        for (int i = 0; i < object_count; i++) {
+            rigidbody *rb = &obj_per_scene [i];
+            if (rb -> type != object_cube) {continue;}
+            float test_offsets [3] = {-1.4f, -0.8f, -0.2f};
+            for (int t = 0; t < 3; t++) {
+                player_sphere.position = (vector3) {main_camera_fov.position.x, main_camera_fov.position.y + test_offsets [t], main_camera_fov.position.z};
+                collision_data cd;
+                if (!collision_sphere_cube (&player_sphere, rb, &cd)) {continue;}
+                vector3 push = vector3_scaling (cd.normal_vector, -cd.penetration_contact);
+                main_camera_fov.position.x += push.x;
+                main_camera_fov.position.y += push.y;
+                main_camera_fov.position.z += push.z;
+                // Grounded check with a small vertical tolerance (0.05) to handle physics jitter
+                if (push.y > 0.001f && main_camera_fov.vertical_velocity <= 0.05f) {
+                    main_camera_fov.vertical_velocity = 0.0f;
+                    is_grounded = true;
+                } else if (push.y < -0.01f && main_camera_fov.vertical_velocity > 0.0f) {main_camera_fov.vertical_velocity = 0.0f;}
+                if ((fabsf (push.x) > fabsf (push.y)) || (fabsf (push.z) > fabsf (push.y))) {
+                    float vdotn = main_camera_fov.horizontal_velocity.x * (-cd.normal_vector.x) + main_camera_fov.horizontal_velocity.z * (-cd.normal_vector.z);
+                    if (vdotn < 0.0f) {
+                        main_camera_fov.horizontal_velocity.x -= vdotn * (-cd.normal_vector.x);
+                        main_camera_fov.horizontal_velocity.z -= vdotn * (-cd.normal_vector.z);
+                    }
+                }
+            }
+        } if (is_grounded) {
+            if (main_camera_fov.vertical_velocity < 0.0f) {main_camera_fov.vertical_velocity = 0.0f;}
+            if (main_inputs.space_key_pressed) {main_camera_fov.vertical_velocity = sqrtf (2.0f * fabsf (world_gravity_y * character_gravity_multiplier) * jump_height);}
+        }
+ if (main_camera_fov.position.x < -250.0f) {main_camera_fov.position.x = -250.0f;}
+        if (main_camera_fov.position.x > 250.0f) {main_camera_fov.position.x = 250.0f;}
+        if (main_camera_fov.position.z < -250.0f) {main_camera_fov.position.z = -250.0f;}
+        if (main_camera_fov.position.z > 250.0f) {main_camera_fov.position.z = 250.0f;}
         apply_force_all_joints ();
         for (int object_iterator_index = 0; object_iterator_index < object_count; object_iterator_index++) {
             vector3 constant_gravity_acceleration = {0, world_gravity_y, 0};

@@ -12,9 +12,7 @@ static vector3 get_viewpoint_velocity (void) {
         main_camera_fov.vertical_velocity,
         main_camera_fov.horizontal_velocity.z
     };
-}
-
-void spawner_launch_sphere (float spherical_radius, float physical_mass, float launch_speed) {
+} void spawner_launch_sphere (float spherical_radius, float physical_mass, float launch_speed) {
     //Spawn the object just very slightly in front of the camera (no collision)
     vector3 initial_spawn_position = vector3_addition (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, spherical_radius + 1.0f));
     int newly_spawned_object_index = scene_add_object (spherical_radius, physical_mass, initial_spawn_position);

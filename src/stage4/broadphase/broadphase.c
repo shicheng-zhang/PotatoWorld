@@ -5,9 +5,7 @@ typedef struct {
     float x_minimum;
     int object_index;
 } broadphase_sweep_entry;
-typedef struct {
-    float x_max, y_min, y_max, z_min, z_max;
-} broadphase_aabb_cache;
+typedef struct {float x_max, y_min, y_max, z_min, z_max;} broadphase_aabb_cache;
 int broadphase_generate_pairing (broadphase_pair *collision_pairs_output_array, int maximum_pairs_allowed) {
     if (object_count < 2) {return 0;}
     static broadphase_sweep_entry *persistent_sweep_array = NULL;
@@ -41,8 +39,7 @@ int broadphase_generate_pairing (broadphase_pair *collision_pairs_output_array, 
         aabb_cache [object_index].y_max = rigid_body -> position.y + extent_y;
         aabb_cache [object_index].z_min = rigid_body -> position.z - extent_z;
         aabb_cache [object_index].z_max = rigid_body -> position.z + extent_z;
-    }
- //Sorting (O (N) loop on average since invocation is determined by number of instances)
+    } //Sorting (O (N) loop on average since invocation is determined by number of instances)
     for (int i = 1; i < object_count; i++) {
         broadphase_sweep_entry key = persistent_sweep_array [i];
         int j = i - 1;

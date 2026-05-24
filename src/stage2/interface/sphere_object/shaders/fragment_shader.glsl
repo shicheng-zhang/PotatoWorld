@@ -6,6 +6,7 @@ in vec3 local_position; //Local Position of Object
 uniform vec3 light_position; //Position of light source
 uniform vec3 object_colour; //color of the object rendered
 uniform vec3 camera_position;
+uniform int is_cube;
 void main () {
     //Ambient Lighting Amount (Increased for visibility)
     float ambient_strength = 0.6f;
@@ -24,10 +25,17 @@ void main () {
     float specular_exponent_factor = pow (max (dot (camera_to_fragment_view_direction_vector, light_reflection_direction_vector), 0.0f), 32.0f);
     vec3 specular_lighting_result_colour = specular_lighting_intensity_coefficient * specular_exponent_factor * vec3 (1.0f, 1.0f, 1.0f);
     vec3 final_calculated_pixel_colour = (ambient_light + diffusion + specular_lighting_result_colour) * object_colour;
-    // Axis rings — painted onto local midplanes so they rotate with the object
-    // X ring (YZ plane, x=0): red — tells you X-axis rotation
-    // Y ring (XZ plane, y=0): green — tells you Y-axis rotation
-    // Z ring (XY plane, z=0): blue — tells you Z-axis rotation
+    // Permanent sharp black borders along all 12 edges of the cube
+    if (is_cube == 1) {
+        float border_thickness = 0.04;
+        vec3 near_edge = step (1.0 - border_thickness, abs (local_position));
+        // A point is on an edge if it is near the boundary on at least two axes
+        float edge_mask = max (near_edge.x * near_edge.y, max (near_edge.y * near_edge.z, near_edge.z * near_edge.x));
+        final_calculated_pixel_colour = mix (final_calculated_pixel_colour, vec3 (0.05), edge_mask);
+    } // Axis rings — painted onto local midplanes so they rotate with the object
+    // X ring (YZ plane, x = 0): red — X-axis rotation
+    // Y ring (XZ plane, y = 0): green — Y-axis rotation
+    // Z ring (XY plane, z = 0): blue — Z-axis rotation
     float stripe_width = 0.06;
     float x_ring = 1.0 - smoothstep (0.0, stripe_width, abs (local_position.x));
     float y_ring = 1.0 - smoothstep (0.0, stripe_width, abs (local_position.y));

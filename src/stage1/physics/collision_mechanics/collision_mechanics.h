@@ -189,7 +189,7 @@ static void collision_resolve (collision_data *collision) {
     // Improved correction: Only scale by inverse mass if both are dynamic.
     // If one is static, the other must take the full displacement.
     vector3 position_correction;
-    if (object_a -> static_state || object_b -> static_state) {
+    if ((object_a -> static_state) || (object_b -> static_state)) {
         // One object is static, dynamic object takes 100% of correction
         position_correction = vector3_scaling (collision -> normal_vector, correction_magnitude * error_correction_percent);
     } else {

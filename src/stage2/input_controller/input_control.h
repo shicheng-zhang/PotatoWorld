@@ -18,8 +18,10 @@ typedef struct {
     bool up_arrow_pressed, down_arrow_pressed, left_arrow_pressed, right_arrow_pressed, enter_key_pressed, e_key_pressed;
     //Mouse Status Inputs
     bool is_mouse_locked;
+    bool is_paused;
     bool left_mouse_button_clicked, right_mouse_button_clicked, middle_mouse_button_clicked;
     float mouse_delta_x, mouse_delta_y;
+    bool suppress_mouse_delta;
 } input_status;
 //Initialise input state to zeroing
 void initialise_input (input_status *input_state);

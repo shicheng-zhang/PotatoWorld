@@ -118,24 +118,24 @@ stage2/camera/../../stage1/math_phys_buffer/buffer.h:39:13: warning: ‘rigidbod
    39 | static void rigidbody_initialisation_sphere (rigidbody *rigid_body, float radius, float mass, vector3 position_input) {
       |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 stage2/input_controller/input_control.c: In function ‘on_keypress’:
-stage2/input_controller/input_control.c:47:73: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
-   47 | } gboolean on_keypress (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
+stage2/input_controller/input_control.c:49:73: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
+   49 | } gboolean on_keypress (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
       |                                                                ~~~~~~~~~^~~~~~~~~~~~~~~~
 stage2/input_controller/input_control.c: In function ‘on_key_released’:
-stage2/input_controller/input_control.c:116:77: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
-  116 | } gboolean on_key_released (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
+stage2/input_controller/input_control.c:122:77: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
+  122 | } gboolean on_key_released (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
       |                                                                    ~~~~~~~~~^~~~~~~~~~~~~~~~
 stage2/input_controller/input_control.c: In function ‘on_button_press’:
-stage2/input_controller/input_control.c:145:80: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
-  145 | } gboolean on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
+stage2/input_controller/input_control.c:173:80: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
+  173 | } gboolean on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
       |                                                                       ~~~~~~~~~^~~~~~~~~~~~~~~~
 stage2/input_controller/input_control.c: In function ‘on_button_release’:
-stage2/input_controller/input_control.c:155:82: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
-  155 | } gboolean on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
+stage2/input_controller/input_control.c:183:82: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
+  183 | } gboolean on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
       |                                                                         ~~~~~~~~~^~~~~~~~~~~~~~~~
 stage2/input_controller/input_control.c: In function ‘on_focus_out’:
-stage2/input_controller/input_control.c:162:76: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
-  162 | } gboolean on_focus_out (GtkWidget *widget, GdkEventFocus *event, gpointer user_data_stored) {
+stage2/input_controller/input_control.c:190:76: warning: unused parameter ‘user_data_stored’ [-Wunused-parameter]
+  190 | } gboolean on_focus_out (GtkWidget *widget, GdkEventFocus *event, gpointer user_data_stored) {
       |                                                                   ~~~~~~~~~^~~~~~~~~~~~~~~~
 In file included from stage2/input_controller/../camera/../../stage1/master_header.h:7,
                  from stage2/input_controller/../camera/camera.h:3,
@@ -198,8 +198,8 @@ stage2/input_controller/../camera/../../stage1/math_phys_buffer/buffer.h:39:13: 
    39 | static void rigidbody_initialisation_sphere (rigidbody *rigid_body, float radius, float mass, vector3 position_input) {
       |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 stage2/interface/simulate/simulation.c: In function ‘physics_step_increment’:
-stage2/interface/simulate/simulation.c:74:11: warning: unused variable ‘adjustment_increment’ [-Wunused-variable]
-   74 |     float adjustment_increment = variable_change_rate;
+stage2/interface/simulate/simulation.c:76:11: warning: unused variable ‘adjustment_increment’ [-Wunused-variable]
+   76 |     float adjustment_increment = variable_change_rate;
       |           ^~~~~~~~~~~~~~~~~~~~
 In file included from stage2/interface/simulate/../../../stage1/physics/collision_mechanics/collision_mechanics.h:5,
                  from stage2/interface/simulate/../../../stage1/master_header.h:7,
@@ -641,8 +641,8 @@ stage4/interaction/spawner/../../../stage1/math_phys_buffer/buffer.h:39:13: warn
    39 | static void rigidbody_initialisation_sphere (rigidbody *rigid_body, float radius, float mass, vector3 position_input) {
       |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 stage4/interaction/selector/object_selector.c: In function ‘selector_get_snapped_hit’:
-stage4/interaction/selector/object_selector.c:75:35: warning: variable ‘s2’ set but not used [-Wunused-but-set-variable]
-   75 |                 float s1 = -1.0f, s2 = 1.0f;
+stage4/interaction/selector/object_selector.c:86:35: warning: variable ‘s2’ set but not used [-Wunused-but-set-variable]
+   86 |                 float s1 = -1.0f, s2 = 1.0f;
       |                                   ^~
 In file included from stage4/interaction/selector/../../../stage1/master_header.h:7,
                  from stage4/interaction/selector/object_selector.h:3,
@@ -763,9 +763,14 @@ stage4/broadphase/../../stage1/math_phys_buffer/buffer.h:77:13: warning: ‘rigi
 stage4/broadphase/../../stage1/math_phys_buffer/buffer.h:39:13: warning: ‘rigidbody_initialisation_sphere’ defined but not used [-Wunused-function]
    39 | static void rigidbody_initialisation_sphere (rigidbody *rigid_body, float radius, float mass, vector3 position_input) {
       |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+stage4/debug_overlay/overlay.c: In function ‘overlay_update’:
+stage4/debug_overlay/overlay.c:160:11: warning: unused variable ‘selected_object_speed’ [-Wunused-variable]
+  160 |     float selected_object_speed = vector3_length (selected_rigid_body -> velocity);
+      |           ^~~~~~~~~~~~~~~~~~~~~
 In file included from stage4/debug_overlay/../../stage1/master_header.h:7,
                  from stage4/debug_overlay/overlay.h:4,
                  from stage4/debug_overlay/overlay.c:1:
+stage4/debug_overlay/../../stage1/physics/collision_mechanics/collision_mechanics.h: At top level:
 stage4/debug_overlay/../../stage1/physics/collision_mechanics/collision_mechanics.h:144:13: warning: ‘collision_resolve’ defined but not used [-Wunused-function]
   144 | static void collision_resolve (collision_data *collision) {
       |             ^~~~~~~~~~~~~~~~~

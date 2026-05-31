@@ -41,6 +41,7 @@ void initialise_input (input_status *input_state) {
     input_state -> is_mouse_locked = false;
     input_state -> is_paused = false;
     input_state -> left_mouse_button_clicked = false;
+    input_state -> left_mouse_button_held = false;
     input_state -> right_mouse_button_clicked = false;
     input_state -> middle_mouse_button_clicked = false;
     input_state -> mouse_delta_x = 0.0f;
@@ -173,8 +174,10 @@ void initialise_input (input_status *input_state) {
 } gboolean on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
     (void) widget;
     input_status *input_state = &main_inputs;
-    if (event -> button == 1) {input_state -> left_mouse_button_clicked = true;}
-    if (event -> button == 2) {input_state -> middle_mouse_button_clicked = true;}
+    if (event -> button == 1) {
+        input_state -> left_mouse_button_clicked = true;
+        input_state -> left_mouse_button_held = true;
+    } if (event -> button == 2) {input_state -> middle_mouse_button_clicked = true;}
     if (event -> button == 3) {input_state -> right_mouse_button_clicked = true;}
     if (!input_state -> is_mouse_locked) {
         mouse_lock_enable (gtk_widget_get_toplevel (widget));
@@ -183,8 +186,10 @@ void initialise_input (input_status *input_state) {
 } gboolean on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
     (void) widget;
     input_status *input_state = &main_inputs;
-    if (event -> button == 1) {input_state -> left_mouse_button_clicked = false;}
-    if (event -> button == 2) {input_state -> middle_mouse_button_clicked = false;}
+    if (event -> button == 1) {
+        input_state -> left_mouse_button_clicked = false;
+        input_state -> left_mouse_button_held = false;
+    } if (event -> button == 2) {input_state -> middle_mouse_button_clicked = false;}
     if (event -> button == 3) {input_state -> right_mouse_button_clicked = false;}
     return FALSE;
 } gboolean on_focus_out (GtkWidget *widget, GdkEventFocus *event, gpointer user_data_stored) {

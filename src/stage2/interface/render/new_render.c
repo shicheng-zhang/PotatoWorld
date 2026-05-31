@@ -27,6 +27,7 @@ static struct {
     GLint camera_position_location;
     GLint light_position_location;
     GLint is_cube_location;
+    GLint breaking_effect_location;
 } shader_uniform_location_registry;
 mesh sphere_mesh;
 static int render_init_status = 0;
@@ -99,6 +100,7 @@ void render_init () {
     shader_uniform_location_registry.camera_position_location = glGetUniformLocation (shaders_program_total, "camera_position");
     shader_uniform_location_registry.light_position_location = glGetUniformLocation (shaders_program_total, "light_position");
     shader_uniform_location_registry.is_cube_location = glGetUniformLocation (shaders_program_total, "is_cube");
+    shader_uniform_location_registry.breaking_effect_location = glGetUniformLocation (shaders_program_total, "breaking_effect");
     grid_init (&main_grid, 250, 5);
     init_sm_system (&sphere_mesh, 32, 32);
     cube_meshing_init ();
@@ -125,6 +127,7 @@ void render_init () {
     //Light Position (Stronger overhead lighting)
     glUniform3f (shader_uniform_location_registry.light_position_location, 20.0f, 40.0f, 20.0f);
     glUniform1i (shader_uniform_location_registry.is_cube_location, 0); // Default to no borders
+    glUniform1f (shader_uniform_location_registry.breaking_effect_location, 0.0f); // Ground never breaks
     //Draw Each Object in Question
     grid_render (&main_grid, shaders_program_total, view_matrix, projection_matrix);
     glUseProgram (shaders_program_total); // Ensure we are back to our main program after grid_render
@@ -155,6 +158,7 @@ void render_init () {
         math4_to_flat_array (model_matrix, model_matrix_flat_array);
         //Colour Uniform of the Objects
         glUniform3f (shader_uniform_location_registry.object_colour_location, rigid_body -> colour.x, rigid_body -> colour.y, rigid_body -> colour.z);
+        glUniform1f (shader_uniform_location_registry.breaking_effect_location, rigid_body -> breaking_progress);
         if (rigid_body -> type == object_cube) {glUniform1i (shader_uniform_location_registry.is_cube_location, 1);}
         else {glUniform1i (shader_uniform_location_registry.is_cube_location, 0);}
         glUniformMatrix4fv (shader_uniform_location_registry.model_matrix_location, 1, GL_FALSE, model_matrix_flat_array);

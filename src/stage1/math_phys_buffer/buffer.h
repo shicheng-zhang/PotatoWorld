@@ -28,6 +28,7 @@ typedef struct {
     //Cube Specific Variables
     vector3 half_extensions;
     vector3 cached_axes [3];
+    float breaking_progress; // Progress from 0.0 to 1.0
 } rigidbody;
 // Helper to update axes from orientation
 static inline void rigidbody_update_axes (rigidbody *rigid_body) {
@@ -56,6 +57,7 @@ static void rigidbody_initialisation_sphere (rigidbody *rigid_body, float radius
     rigid_body -> static_state = (mass == 0); //Static Objects
     rigid_body -> friction_static = 0.3f;
     rigid_body -> friction_kinetic = 0.2f;
+    rigid_body -> breaking_progress = 0.0f;
     //Inertial Tensors
     //I = 0.4fmr ^ 2
     float inertia_coefficient_sphere = (0.4f) * mass * radius * radius;
@@ -188,6 +190,7 @@ static void rigidbody_initialisation_cube (rigidbody *rigid_body, vector3 positi
     rigid_body -> static_state = (mass == 0);
     rigid_body -> friction_static = 0.4f;
     rigid_body -> friction_kinetic = 0.3f;
+    rigid_body -> breaking_progress = 0.0f;
     //Inertia Tensor for rectangular box: I = (m/12) * (h² + d², w² + d², w² + h²), nominal extension only for boxes
     float width = half_extensions.x * 2.0f;  //full width
     float height = half_extensions.y * 2.0f;  //full height

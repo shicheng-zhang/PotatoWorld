@@ -75,9 +75,7 @@ static inline math3 math3_identity () {
     result_matrix.matrix [0][0] = 1.0f; result_matrix.matrix [1][1] = 1.0f; result_matrix.matrix [2][2] = 1.0f;
     return result_matrix;
 } //Multiply specific matrix by a existing vector
-static inline vector3 math3_multiplication_vector3 (math3 matrix, vector3 vector) {
-    return (vector3) {matrix.matrix [0][0] * vector.x + matrix.matrix [0][1] * vector.y + matrix.matrix [0][2] * vector.z, matrix.matrix [1][0] * vector.x + matrix.matrix [1][1] * vector.y + matrix.matrix [1][2] * vector.z, matrix.matrix [2][0] * vector.x + matrix.matrix [2][1] * vector.y + matrix.matrix [2][2] * vector.z};
-} //Convert 4D to rotational matrix (Inertia Tensor rotations)
+static inline vector3 math3_multiplication_vector3 (math3 matrix, vector3 vector) {return (vector3) {matrix.matrix [0][0] * vector.x + matrix.matrix [0][1] * vector.y + matrix.matrix [0][2] * vector.z, matrix.matrix [1][0] * vector.x + matrix.matrix [1][1] * vector.y + matrix.matrix [1][2] * vector.z, matrix.matrix [2][0] * vector.x + matrix.matrix [2][1] * vector.y + matrix.matrix [2][2] * vector.z};} //Convert 4D to rotational matrix (Inertia Tensor rotations)
 //I_total = R * I_local * * R_transposed
 static inline math3 vector4_to_math3 (vector4 quaternion) {
     math3 result_matrix;

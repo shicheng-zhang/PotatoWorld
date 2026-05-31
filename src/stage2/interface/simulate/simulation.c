@@ -115,28 +115,53 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
                 if (vector3_length_squared (diff) < 100.0f) {spawner_static_cube (snapped_pos, (vector3){spawn_cube_extent, spawn_cube_extent, spawn_cube_extent}, spawn_cube_mass);}
             }
         } main_inputs.right_mouse_button_clicked = false;
-    } // Left Click: Remove Object under crosshair
-    if (main_inputs.left_mouse_button_clicked) {
+    } // Left Click: Progressive breaking of object under crosshair
+    static int breaking_object_index = -1;
+    if (main_inputs.left_mouse_button_held) {
         int hit_object = selector_ray_tracing ();
         if (hit_object >= 0) {
-            // Range check for removal
+            // Range check for breaking
             vector3 diff = vector3_subtraction (obj_per_scene [hit_object].position, main_camera_fov.position);
-            if (vector3_length_squared (diff) < 100.0f) { // 10 meter range
-                remove_joints_from_object (hit_object);
-                for (int object_index = hit_object; object_index < object_count - 1; object_index++) {obj_per_scene [object_index] = obj_per_scene [object_index + 1];}
-                object_count -= 1;
-                if (selected_object == hit_object) {selected_object = -1;}
-                else if (selected_object > hit_object) {selected_object--;}
+            if (vector3_length_squared (diff) < 144.0f) { // 12 meter range
+                if (breaking_object_index != hit_object && breaking_object_index != -1) {
+                    if (breaking_object_index < object_count) obj_per_scene [breaking_object_index].breaking_progress = 0.0f;
+                }
+                breaking_object_index = hit_object;
+                // Progress the breaking state (takes approx 0.6 seconds)
+                obj_per_scene [hit_object].breaking_progress += frame_delta_time * 1.6f; 
+                if (obj_per_scene [hit_object].breaking_progress >= 1.0f) {
+                    remove_joints_from_object (hit_object);
+                    for (int object_index = hit_object; object_index < object_count - 1; object_index++) {obj_per_scene [object_index] = obj_per_scene [object_index + 1];}
+                    object_count -= 1;
+                    if (selected_object == hit_object) {selected_object = -1;}
+                    else if (selected_object > hit_object) {selected_object--;}
+                    breaking_object_index = -1;
+                }
+            } else if (breaking_object_index != -1) {
+                if (breaking_object_index < object_count) obj_per_scene [breaking_object_index].breaking_progress = 0.0f;
+                breaking_object_index = -1;
             }
-        } main_inputs.left_mouse_button_clicked = false;
-    } if (main_inputs.e_key_pressed) {
+        } else if (breaking_object_index != -1) {
+            if (breaking_object_index < object_count) obj_per_scene [breaking_object_index].breaking_progress = 0.0f;
+            breaking_object_index = -1;
+        }
+    } else {
+        // Reset breaking progress if we stop clicking
+        if (breaking_object_index >= 0 && breaking_object_index < object_count) {
+            obj_per_scene [breaking_object_index].breaking_progress = 0.0f;
+        } breaking_object_index = -1;
+    } main_inputs.left_mouse_button_clicked = false;
+
+    // E Key: Object Menu
+    if (main_inputs.e_key_pressed) {
         if (selected_object >= 0) {
             if (obj_per_scene [selected_object].type == object_sphere) {
                 if (main_inputs.object_menu_level > 0) {main_inputs.object_menu_level = 0;}
                 else {main_inputs.object_menu_level = 1;}
             }
         } main_inputs.e_key_pressed = false;
-    } if (main_inputs.f_key_pressed) {
+    } // F Key: Apply Force
+    if (main_inputs.f_key_pressed) {
         if (selected_object >= 0) {selector_apply_force_impulse (250.0f);} //Increased as cube friction is far higher
         main_inputs.f_key_pressed = false;
     } //Shift: Toggle Spawn Type
@@ -285,6 +310,10 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         for (int i = 0; i < object_count; i++) {
             rigidbody *rb = &obj_per_scene [i];
             if (rb -> type != object_cube) {continue;}
+            // Optimization: Fast AABB-style distance check before expensive math
+            if (fabsf (main_camera_fov.position.x - rb -> position.x) > 6.0f) {continue;}
+            if (fabsf (main_camera_fov.position.z - rb -> position.z) > 6.0f) {continue;}
+            if (fabsf (main_camera_fov.position.y - rb -> position.y) > 6.0f) {continue;}
             float test_offsets [3] = {-1.4f, -0.8f, -0.2f};
             for (int t = 0; t < 3; t++) {
                 player_sphere.position = (vector3) {main_camera_fov.position.x, main_camera_fov.position.y + test_offsets [t], main_camera_fov.position.z};
@@ -319,6 +348,7 @@ static void on_entry_insert_text (GtkEditable *editable, const gchar *new_text, 
         for (int object_iterator_index = 0; object_iterator_index < object_count; object_iterator_index++) {
             vector3 constant_gravity_acceleration = {0, world_gravity_y, 0};
             rigidbody *rigid_body = &obj_per_scene [object_iterator_index];
+            if (rigid_body -> static_state) {continue;}
             vector3 up_axis = {0, 1, 0};
             float projection = rigid_body -> radius;
             if (rigid_body -> type == object_cube) {

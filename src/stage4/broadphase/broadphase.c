@@ -57,6 +57,8 @@ int broadphase_generate_pairing (broadphase_pair *collision_pairs_output_array, 
             if (persistent_sweep_array [inner_iterator].x_minimum > x_max_a) {break;}
             if (collision_pair_counter >= maximum_pairs_allowed) {break;}
             int object_index_b = persistent_sweep_array [inner_iterator].object_index;
+            // Optimization: Skip pairs where both objects are static
+            if (obj_per_scene [object_index_a].static_state && obj_per_scene [object_index_b].static_state) {continue;}
             //Check Y and Z separation of objects
             if ((aabb_cache [object_index_b].y_min > aabb_cache [object_index_a].y_max) || (aabb_cache [object_index_b].y_max < aabb_cache [object_index_a].y_min)) {continue;}
             if ((aabb_cache [object_index_b].z_min > aabb_cache [object_index_a].z_max) || (aabb_cache [object_index_b].z_max < aabb_cache [object_index_a].z_min)) {continue;}

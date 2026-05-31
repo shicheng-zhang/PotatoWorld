@@ -19,7 +19,8 @@ typedef struct {
     //Mouse Status Inputs
     bool is_mouse_locked;
     bool is_paused;
-    bool left_mouse_button_clicked, right_mouse_button_clicked, middle_mouse_button_clicked;
+    bool left_mouse_button_clicked, left_mouse_button_held;
+    bool right_mouse_button_clicked, middle_mouse_button_clicked;
     float mouse_delta_x, mouse_delta_y;
     bool suppress_mouse_delta;
 } input_status;

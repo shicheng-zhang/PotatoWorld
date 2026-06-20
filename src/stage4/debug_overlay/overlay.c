@@ -77,7 +77,7 @@ GtkWidget *overlay_initialise (GtkWidget *gl_drawing_area_widget) {
     float adjustment_increment = variable_change_rate;
     if (pause_label) {
         if (main_inputs.is_paused) {
-            gtk_label_set_text (GTK_LABEL (pause_label), "--- For Meiqi Only ---\nWhen I started programming this, I had no idea if I could finish it in time for you at all.\n\nI debated very long about how I should write my card to you, and I came to the conclusion that this was the best way. A Easter Egg. A secret, Just for you.\n\nNone of what you see here was just me, to get this thing up and running in 4 months AI helped me a lot, due credits to them.\n\nBut at least I made stage 1 all by myself, all the math belongs to me :)\n\nThis is for you, and only you. This game, and all that's inside. Yours to keep and play.\n\nOf course neglect the abysmal graphics of course.\n\n I do wish us happiness. I really do. I hope you want that for us as well.\n\nYou said that around me, you felt like you could be you, with no responsibilities or a care in the world.\n\nI hope I can be that for you for a very long time.\n\n17 Doesn't come easily. We have just that tiny year left. But what we have, by ourselves, is time. Lots of it.\n\nYours, most sincerely\nHappy Birthday, Meiqi. :)\n\n");
+            gtk_label_set_text (GTK_LABEL (pause_label), "Game Paused");
             gtk_widget_show (pause_label);
             // Hide other labels to focus on the message
             if (menu_label) gtk_widget_hide (menu_label);

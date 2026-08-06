@@ -4,3 +4,5 @@ Current Head: 0.9.2-Stable (Parallel to v1.0-Stable in MPE)
 Previous versions:
     0.9.2-Stable
     0.9-Basic (Equivilant to v1.0-RC in MPE)
+
+MPE v14S will become the next baseline layer for PotatoWorld v10S (Coming soon)

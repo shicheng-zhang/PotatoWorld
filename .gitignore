@@ -1,0 +1,5 @@
+src/build/
+src/engine
+tests/test_standalone
+*.o
+*.d

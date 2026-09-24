@@ -1,4 +1,3 @@
-```markdown
 # v10S — Miniature Physics Engine (v10S)
 
 <!-- MPE_RELEASE_FREEZE_NOTICE_BEGIN -->

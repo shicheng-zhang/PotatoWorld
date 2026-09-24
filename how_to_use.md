@@ -1,6 +1,6 @@
 ```markdown
-# PotatoWorld v2 — User Guide
-### Base: Miniature Physics Engine v14S (MPE v14S)
+# v10S — User Guide
+### Base: Miniature Physics Engine v10S (v10S)
 
 ---
 
@@ -12,7 +12,7 @@ From the `src/` directory, run:
 ./engine
 ```
 
-The window opens in Game Mode by default. On startup, the engine generates a procedural voxel terrain (PotatoWorld). Left click anywhere inside the window to lock the mouse. Press Escape to release it.
+The window opens in Game Mode by default. On startup, the engine generates a procedural voxel terrain (v10S). Left click anywhere inside the window to lock the mouse. Press Escape to release it.
 
 ---
 
@@ -44,9 +44,9 @@ In Game Mode, releasing WASD does not stop instantly — horizontal momentum ble
 
 ---
 
-## PotatoWorld — Voxel World
+## v10S — Voxel World
 
-PotatoWorld v2 adds a Minecraft-style voxel world. On startup, a 128 x 64 x 128 block terrain is generated using Perlin noise. The world contains grass, dirt, stone, and ore blocks.
+v10S adds a Minecraft-style voxel world. On startup, a 128 x 64 x 128 block terrain is generated using Perlin noise. The world contains grass, dirt, stone, and ore blocks.
 
 ### Block Interaction
 
@@ -217,7 +217,7 @@ Press `9` to open the scene menu:
 
 Scenes are saved to `status/scene.dat`. Saving overwrites any existing file. Loading clears the current scene and replaces it entirely. Both spheres and cubes are saved and restored correctly, including position, velocity, orientation, colour, mass, friction, restitution, and static state.
 
-**Known limitations:** Spring joints are **not** saved and will be lost on save/load. Object IDs are reassigned on load, so any external references (selection, terminal, joints) to specific IDs will not survive. Sleeping state is not persisted — all objects load awake. These limitations will be addressed in scene format version 2 (post-v14S).
+**Known limitations:** Spring joints are **not** saved and will be lost on save/load. Object IDs are reassigned on load, so any external references (selection, terminal, joints) to specific IDs will not survive. Sleeping state is not persisted — all objects load awake. These limitations will be addressed in scene format version 2 (post-v10S).
 
 ---
 
@@ -268,9 +268,9 @@ Broadphase collision detection uses a 3D spatial hash grid and runs once per phy
 
 **Object count:** Performance degrades gradually above approximately 1136 objects. The physics and broadphase scale linearly with object count; rendering is the primary bottleneck at high numbers.
 
-**Scene format:** Save/load preserves bodies but not spring joints, object IDs, or sleep state. Scene format v2 is planned post-v14S.
+**Scene format:** Save/load preserves bodies but not spring joints, object IDs, or sleep state. Scene format v2 is planned post-v10S.
 
-**PotatoWorld v2:** Block inventory menu not yet ported from old PotatoWorld. Spawn gun mechanics pending. Water and Glass blocks do not yet have transparency rendering.
+**v10S:** Block inventory menu not yet ported from old v10S. Spawn gun mechanics pending. Water and Glass blocks do not yet have transparency rendering.
 
 ---
 
@@ -300,16 +300,16 @@ The engine has been tested on Ubuntu 24.04.4 LTS. Intel MacOS users may attempt 
 
 ---
 
-## A3_VALIDATION.md — full rewrite for v14S
+## A3_VALIDATION.md — full rewrite for v10S
 
 ```markdown
-# MPE v14S Validation Checklist
+# v10S Validation Checklist
 
-> This checklist was used to validate the `v14S` stable release.
+> This checklist was used to validate the `v10S` stable release.
 > It is subordinate to [`RELEASE_GATES.md`](RELEASE_GATES.md), which is the authoritative gate list.
 
 <!-- MPE_RELEASE_GATES_SECTION_BEGIN -->
-## v14S Release Gates
+## v10S Release Gates
 
 The stable release is controlled by [`RELEASE_GATES.md`](RELEASE_GATES.md).
 
@@ -329,7 +329,7 @@ Minimum mandatory gates:
 - [x] Repository artifacts are cleaned.
 - [x] Sanitizer validation passes.
 
-All mandatory P0 gates passed before tagging `v14S`.
+All mandatory P0 gates passed before tagging `v10S`.
 <!-- MPE_RELEASE_GATES_SECTION_END -->
 
 This checklist validates the full 1–51 A3 patch sequence plus the S-01 through S-11 stable-release fixes.
@@ -388,7 +388,7 @@ This checklist validates the full 1–51 A3 patch sequence plus the S-01 through
 
 - [x] make -C src clean succeeds.
 - [x] make -C src succeeds.
-- [x] Startup prints: PotatoWorld v2 (MPE v14S)
+- [x] Startup prints: v10S (v10S)
 
 ## Sanitizer Validation
 
@@ -420,5 +420,5 @@ Then manually test:
 9. Set friction to 0 and restitution above 0 — objects slide and bounce.
 10. Open debug terminal (T) — commands execute correctly.
 
-All checks passed. `v14S` tagged.
+All checks passed. `v10S` tagged.
 ```

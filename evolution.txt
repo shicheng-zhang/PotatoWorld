@@ -53,12 +53,12 @@ Phase 4 is in progress:
         0.9.9-Alpha
         0.9.8-Alpha
 
-Phase 5: PotatoWorld v2 (Game Layer on MPE v14S)
+Phase 5: v10S (Game Layer on v10S)
     Completed (September 2026)
     Project: 7254-PTWD
-    Base: MPE v14S (tag V1.4-Stable, commit 458072e)
+    Base: v10S (tag V1.4-Stable, commit 458072e)
     Prev Versions:
-        PotatoWorld v1 (v10R3-based, old PotatoWorld/)
+        v10S v1 (v10R3-based, old v10S/)
     Notes:
         - Additive game layer: no MPE engine physics code modified
         - 128x64x128 voxel world, 15 block types

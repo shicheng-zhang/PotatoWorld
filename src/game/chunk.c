@@ -1,4 +1,4 @@
-/* PotatoWorld v2 — Chunk System Implementation */
+/* v10S — Chunk System Implementation */
 
 #include "chunk.h"
 #include <string.h>

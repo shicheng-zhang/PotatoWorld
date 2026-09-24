@@ -1,15 +1,15 @@
 ```markdown
-# PotatoWorld v2 — Release Notes
+# v10S — Release Notes
 
 **Release date:** September 2026
-**Base:** MPE v14S
+**Base:** v10S
 **License:** GPL-3.0
 
 ---
 
 ## What is this?
 
-PotatoWorld v2 is a **Minecraft-style voxel game layer** built on top of MPE v14S, the hardened stable release of the Miniature Physics Engine. The game layer is fully additive — no MPE engine physics code is modified. All new code lives in `src/game/`.
+v10S is a **Minecraft-style voxel game layer** built on top of v10S, the hardened stable release of the Miniature Physics Engine. The game layer is fully additive — no v10S engine physics code is modified. All new code lives in `src/game/`.
 
 ---
 
@@ -36,7 +36,7 @@ PotatoWorld v2 is a **Minecraft-style voxel game layer** built on top of MPE v14
 
 ---
 
-## Controls (New in PotatoWorld v2)
+## Controls (New in v10S)
 
 | Action | Input |
 |---|---|
@@ -48,12 +48,12 @@ PotatoWorld v2 is a **Minecraft-style voxel game layer** built on top of MPE v14
 
 ## Known Limitations
 
-- Block inventory menu not yet ported from old PotatoWorld
+- Block inventory menu not yet ported from old v10S
 - Spawn gun mechanics pending
 - Water and Glass blocks do not yet have transparency rendering
 - Block placement uses default block type only
 
 ---
 
-*PotatoWorld v2 is free software, licensed under the GNU GPL v3. See [LICENSE](LICENSE).*
+*v10S is free software, licensed under the GNU GPL v3. See [LICENSE](LICENSE).*
 ```

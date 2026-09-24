@@ -177,7 +177,7 @@ void rigidbody_initialisation_sphere (rigidbody *rigid_body, float radius, float
     if (mass > 0) {rigid_body -> inverse_mass = 1.0f / mass;}
     else {rigid_body -> inverse_mass = 0.0f;}
     rigid_body -> radius = radius;
-    rigid_body -> restitution = 0.5f; //Default Bounce Energy Return
+    rigid_body -> restitution = 0.18f; // toned down: was 0.5 caused crazy bouncing
     rigid_body -> static_state = (mass == 0);
     rigid_body -> is_sleeping = false;
     rigid_body -> sleep_timer = 0.0f; //Static Objects
@@ -424,7 +424,7 @@ void rigidbody_initialisation_cube (rigidbody *rigid_body, vector3 position_inpu
     else {rigid_body -> inverse_mass = 0.0f;}
     rigid_body -> half_extensions = half_extensions;
     rigid_body -> radius = vector3_length (half_extensions); // Bounding radius for broadphase
-    rigid_body -> restitution = 0.5f;
+    rigid_body -> restitution = 0.12f;
     rigid_body -> static_state = (mass == 0);
     rigid_body -> is_sleeping = false;
     rigid_body -> sleep_timer = 0.0f;

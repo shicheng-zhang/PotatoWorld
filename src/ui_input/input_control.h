@@ -19,10 +19,11 @@ bool t_key_pressed;
     //File Load Inputs
     bool is_menu_open;
     bool menu_1_pressed, menu_2_pressed, menu_3_pressed;
-    //Spawn Object Status
+     //Spawn Object Status
     int spawner_menu_level;
     int velocity_menu_level;
     int object_menu_level;
+    int test_menu_level; // 0 closed, 1 open (F6)
     int current_spawn_type; // 0: Sphere, 1: Cube
     bool up_arrow_pressed, down_arrow_pressed, left_arrow_pressed, right_arrow_pressed, enter_key_pressed, e_key_pressed;
 bool stability_test_pressed;
@@ -39,6 +40,7 @@ bool long_run_validation_pressed;
     //Mouse Status Inputs
     bool is_mouse_locked, is_debug_mode_active;
     bool left_mouse_button_clicked, right_mouse_button_clicked, middle_mouse_button_clicked;
+    bool left_mouse_held; /* held state for breaking */
     float mouse_delta_x, mouse_delta_y;
     bool suppress_mouse_delta;
     int marked_joint_object_index; // -1 if none is marked

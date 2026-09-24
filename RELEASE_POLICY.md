@@ -1,16 +1,16 @@
-# MPE v14A3 Release Freeze Policy
+# v10S Release Freeze Policy
 
-This tree is in **PotatoWorld v2 active development**.
+This tree is in **v10S active development**.
 
-# 12/08/26 Update: v14S stabilised. This document is now in a legacy state.
-# 21/09/26 Update: PotatoWorld v2 game layer added on top of MPE v14S.
+# 12/08/26 Update: v10S stabilised. This document is now in a legacy state.
+# 21/09/26 Update: v10S game layer added on top of v10S.
 
-The purpose of this stage is to stabilise the engine for the upcoming `v14S`
+The purpose of this stage is to stabilise the engine for the upcoming `v10S`
 stable release.
 
 ## Freeze Rule
 
-Until `v14S` is tagged, the following rule applies:
+Until `v10S` is tagged, the following rule applies:
 
 > No new features are to be added to this branch.
 
@@ -26,7 +26,7 @@ Only the following change classes are accepted:
 
 ## Explicitly Deferred
 
-The following are deferred until after `v14S`:
+The following are deferred until after `v10S`:
 
 - New physics features.
 - New rendering features.
@@ -41,7 +41,7 @@ The following are deferred until after `v14S`:
 
 ## Release Goal
 
-The goal of `v14S` is not to make the engine perfect.
+The goal of `v10S` is not to make the engine perfect.
 
 The goal is to make the current engine:
 
@@ -49,5 +49,5 @@ The goal is to make the current engine:
 - run predictably,
 - fail visibly,
 - pass validation,
-- and be release-worthy as the stable form of `v14A3`.
+- and be release-worthy as the stable form of `v10S`.
 

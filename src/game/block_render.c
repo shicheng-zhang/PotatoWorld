@@ -1,20 +1,26 @@
-/* PotatoWorld v2 — Block Rendering Implementation
+/* v10S — Block Rendering Implementation
  * GPU-instanced chunk meshing, own GLSL Phong shader. */
 
 #include "block_render.h"
 #include "block.h"
 #include "chunk.h"
 #include "world.h"
+#include "raycast.h"
+#include "game_init.h"
+#include "../ui_input/camera.h"
 #include "../core/math4_special.h"
 #include <epoxy/gl.h>
 #include <stdlib.h>
 #include <string.h>
+extern camera main_camera_fov;
 
 static GLuint block_shader = 0;
 static GLint block_proj_loc = 0;
 static GLint block_view_loc = 0;
 static GLint block_cam_loc = 0;
 static GLint block_light_loc = 0;
+static GLint block_break_pos_loc = 0;
+static GLint block_break_prog_loc = 0;
 
 static const char *block_vert_src =
     "#version 330 core\n"
@@ -40,6 +46,8 @@ static const char *block_frag_src =
     "in vec3 Color;\n"
     "uniform vec3 camera_position;\n"
     "uniform vec3 light_position;\n"
+    "uniform vec3 break_pos;\n"
+    "uniform float break_prog;\n"
     "out vec4 FragColor;\n"
     "void main() {\n"
     "    vec3 ambient = 0.5 * Color;\n"
@@ -50,7 +58,58 @@ static const char *block_frag_src =
     "    vec3 reflectDir = reflect(-lightDir, Normal);\n"
     "    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0);\n"
     "    vec3 specular = 0.15 * spec * vec3(1.0);\n"
-    "    FragColor = vec4(ambient + diffuse + specular, 1.0);\n"
+    "    vec3 base = ambient + diffuse + specular;\n"
+    "    // discernible block borders: darken edges 2-3cm\n"
+    "    vec3 f = fract(FragPos);\n"
+    "    float d = 1.0;\n"
+    "    if (abs(Normal.x) > 0.5) { d = min(min(f.y, 1.0 - f.y), min(f.z, 1.0 - f.z)); }\n"
+    "    else if (abs(Normal.y) > 0.5) { d = min(min(f.x, 1.0 - f.x), min(f.z, 1.0 - f.z)); }\n"
+    "    else { d = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)); }\n"
+    "    float border = 1.0;\n"
+    "    if (d < 0.015) border = 0.35;\n"
+    "    else if (d < 0.03) border = 0.65;\n"
+    "    else if (d < 0.045) border = 0.85;\n"
+    "    base *= border;\n"
+    "    // breaking cracks: if this fragment is on the breaking block, overlay cracks\n"
+    "    if (break_prog >= 0.0) {\n"
+    "        // check if FragPos is inside the breaking block (expand 0.01 for float error)\n"
+    "        if (FragPos.x >= break_pos.x - 0.02 && FragPos.x <= break_pos.x + 1.02 &&\n"
+    "            FragPos.y >= break_pos.y - 0.02 && FragPos.y <= break_pos.y + 1.02 &&\n"
+    "            FragPos.z >= break_pos.z - 0.02 && FragPos.z <= break_pos.z + 1.02) {\n"
+    "            vec2 uv;\n"
+    "            if (abs(Normal.x) > 0.5) uv = fract(FragPos.yz);\n"
+    "            else if (abs(Normal.y) > 0.5) uv = fract(FragPos.xz);\n"
+    "            else uv = fract(FragPos.xy);\n"
+    "            float crack = 0.0;\n"
+    "            // stage 1: light cracks\n"
+    "            if (break_prog > 0.05) {\n"
+    "                float l1 = abs(sin(uv.x*18.0 + uv.y*12.0));\n"
+    "                if (l1 > 0.93 - break_prog*0.18) crack = 1.0;\n"
+    "                float l1b = abs(cos(uv.y*16.0 - uv.x*10.0));\n"
+    "                if (l1b > 0.94 - break_prog*0.15) crack = 1.0;\n"
+    "            }\n"
+    "            if (break_prog > 0.35) {\n"
+    "                float l2 = abs(sin((uv.x+uv.y)*14.0));\n"
+    "                if (l2 > 0.91 - break_prog*0.2) crack = 1.0;\n"
+    "                float l2b = abs(cos(uv.x*22.0 - uv.y*18.0));\n"
+    "                if (l2b > 0.92 - break_prog*0.18) crack = 1.0;\n"
+    "            }\n"
+    "            if (break_prog > 0.65) {\n"
+    "                float l3 = abs(sin(uv.x*28.0 + uv.y*22.0));\n"
+    "                if (l3 > 0.88 - break_prog*0.12) crack = 1.0;\n"
+    "            }\n"
+    "            if (crack > 0.5) {\n"
+    "                // dark crack line\n"
+    "                base = mix(base, vec3(0.05,0.05,0.05), 0.85);\n"
+    "            } else {\n"
+    "                // overall darken as progress increases\n"
+    "                base *= (1.0 - break_prog*0.45);\n"
+    "            }\n"
+    "            // add slight red tint at high progress\n"
+    "            if (break_prog > 0.7) base.r += 0.08 * break_prog;\n"
+    "        }\n"
+    "    }\n"
+    "    FragColor = vec4(base, 1.0);\n"
     "}\n";
 
 static GLuint compile_shader (GLenum type, const char *src) {
@@ -101,6 +160,12 @@ void block_render_init (void) {
     block_view_loc = glGetUniformLocation (block_shader, "viewframe");
     block_cam_loc = glGetUniformLocation (block_shader, "camera_position");
     block_light_loc = glGetUniformLocation (block_shader, "light_position");
+    block_break_pos_loc = glGetUniformLocation (block_shader, "break_pos");
+    block_break_prog_loc = glGetUniformLocation (block_shader, "break_prog");
+    // default no breaking
+    glUseProgram(block_shader);
+    glUniform3f(block_break_pos_loc, 1e6, 1e6, 1e6);
+    glUniform1f(block_break_prog_loc, -1.0f);
 }
 
 /* 6 faces: +x, -x, +y, -y, +z, -z */
@@ -194,17 +259,31 @@ static void build_chunk_mesh (const game_world *w, const chunk *c,
     *ind_count_out = ic;
 }
 
-void block_render_world (const game_world *w,
-                         const float *projection_flat,
-                         const float *view_flat,
-                         float cam_x, float cam_y, float cam_z) {
+void block_render_world_sun (const game_world *w,
+                             const float *projection_flat,
+                             const float *view_flat,
+                             float cam_x, float cam_y, float cam_z,
+                             float sun_x, float sun_y, float sun_z) {
     if (!block_shader) {return;}
 
     glUseProgram (block_shader);
     glUniformMatrix4fv (block_proj_loc, 1, GL_FALSE, projection_flat);
     glUniformMatrix4fv (block_view_loc, 1, GL_FALSE, view_flat);
     glUniform3f (block_cam_loc, cam_x, cam_y, cam_z);
-    glUniform3f (block_light_loc, 100.0f, 200.0f, 50.0f);
+    glUniform3f (block_light_loc, sun_x, sun_y, sun_z);
+    // breaking cracks: find targeted block and progress
+    {
+        raycast_result br = raycast_voxel(w, cam_x, cam_y, cam_z,
+                                          main_camera_fov.forward_vector.x, main_camera_fov.forward_vector.y, main_camera_fov.forward_vector.z, 8.0f);
+        float prog = -1.0f;
+        float bx = 1e6f, by = 1e6f, bz = 1e6f;
+        if (br.hit) {
+            float p = game_get_break_progress(br.block_x, br.block_y, br.block_z);
+            if (p >= 0.0f) { prog = p; bx = (float)br.block_x; by = (float)br.block_y; bz = (float)br.block_z; }
+        }
+        glUniform3f(block_break_pos_loc, bx, by, bz);
+        glUniform1f(block_break_prog_loc, prog);
+    }
 
     for (int cy = 0; cy < WORLD_CHUNKS_Y; cy++) {
         for (int cz = 0; cz < WORLD_CHUNKS_Z; cz++) {
@@ -271,6 +350,12 @@ void block_render_world (const game_world *w,
             }
         }
     }
+}
+void block_render_world (const game_world *w,
+                         const float *projection_flat,
+                         const float *view_flat,
+                         float cam_x, float cam_y, float cam_z) {
+    block_render_world_sun(w, projection_flat, view_flat, cam_x, cam_y, cam_z, 100.0f, 200.0f, 50.0f);
 }
 
 void block_render_cleanup (void) {

@@ -58,18 +58,20 @@ static inline math4 math4_scaling (vector3 scale_vector) {
     result_matrix.matrix [2][2] = scale_vector.z;
     return result_matrix;
 } //Multiplication
-static inline math4 math4_multiplication (math4 matrix_a, math4 matrix_b) {
+ static inline math4 math4_multiplication (math4 matrix_a, math4 matrix_b) {
     math4 result_matrix = {{{0}}};
-    for (int column_index = 0; column_index < 4; column_index++) {
-        for (int row_index = 0; row_index < 4; row_index++) {
-            result_matrix.matrix [column_index][row_index] =
-                (matrix_a.matrix [0][row_index] * matrix_b.matrix [column_index][0]) +
-                (matrix_a.matrix [1][row_index] * matrix_b.matrix [column_index][1]) +
-                (matrix_a.matrix [2][row_index] * matrix_b.matrix [column_index][2]) +
-                (matrix_a.matrix [3][row_index] * matrix_b.matrix [column_index][3]);
+    for (int row_index = 0; row_index < 4; row_index++) {
+        for (int column_index = 0; column_index < 4; column_index++) {
+            result_matrix.matrix [row_index][column_index] =
+                (matrix_a.matrix [row_index][0] * matrix_b.matrix [0][column_index]) +
+                (matrix_a.matrix [row_index][1] * matrix_b.matrix [1][column_index]) +
+                (matrix_a.matrix [row_index][2] * matrix_b.matrix [2][column_index]) +
+                (matrix_a.matrix [row_index][3] * matrix_b.matrix [3][column_index]);
         }
-    } return result_matrix;
-} //Quaternion to Matrix Interface
+    }
+    return result_matrix;
+}
+//Quaternion to Matrix Interface
 static inline math4 vector4_to_math4 (vector4 quaternion) {
     math4 result_matrix = math4_identity ();
     float x_double = quaternion.x + quaternion.x, y_double = quaternion.y + quaternion.y, z_double = quaternion.z + quaternion.z;

@@ -1,4 +1,4 @@
-/* PotatoWorld v2 — DDA Voxel Raycast
+/* v10S — DDA Voxel Raycast
  * Block-type-aware ray intersection, returns hit position + face normal. */
 
 #ifndef game_raycast_h

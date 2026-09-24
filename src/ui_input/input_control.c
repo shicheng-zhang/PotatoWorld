@@ -1,5 +1,7 @@
 #include "../mpe_engine.h"
 #include "../game/game_init.h"
+#include "../game/player.h"
+#include "../game/item_registry.h"
 #include "input_control.h"
 #include "camera.h"
 #include "mouse_lock.h"
@@ -38,6 +40,7 @@ input_state -> t_key_pressed = false;
     input_state -> spawner_menu_level = 0;
     input_state -> velocity_menu_level = 0;
     input_state -> object_menu_level = 0;
+    input_state -> test_menu_level = 0;
     input_state -> current_spawn_type = 0; // 0: Sphere, 1: Cube
     input_state -> up_arrow_pressed = false;
     input_state -> down_arrow_pressed = false;
@@ -63,6 +66,7 @@ input_state -> enter_spawn_held = false;
     input_state -> is_mouse_locked = false;
     input_state -> is_debug_mode_active = false;
     input_state -> left_mouse_button_clicked = false;
+    input_state -> left_mouse_held = false;
     input_state -> right_mouse_button_clicked = false;
     input_state -> middle_mouse_button_clicked = false;
     input_state -> mouse_delta_x = 0.0f;
@@ -84,21 +88,55 @@ if (event -> keyval == GDK_KEY_Delete) {input_state -> delete_key_pressed = true
 if ((event -> keyval == GDK_KEY_m) || (event -> keyval == GDK_KEY_M)) {input_state -> m_key_pressed = true;}
 if ((event -> keyval == GDK_KEY_t) || (event -> keyval == GDK_KEY_T)) {input_state -> t_key_pressed = true;}
 /* MPE_TASK_21_KEYBOARD_ONLY_KEYPRESS_END */
-if (event -> keyval == GDK_KEY_F5) {input_state -> stability_test_pressed = true;}
-if (event -> keyval == GDK_KEY_F6) {input_state -> sleep_wake_test_pressed = true;}
-if (event -> keyval == GDK_KEY_F7) {input_state -> editor_torture_pressed = true;}
-if (event -> keyval == GDK_KEY_F8) {input_state -> spawn_stress_pressed = true;}
-if (event -> keyval == GDK_KEY_F9) {input_state -> validation_report_pressed = true;}
-/* MPE_TASK_13_LONG_RUN_KEY_BEGIN */
-if (event -> keyval == GDK_KEY_F10) {input_state -> long_run_validation_pressed = true;}
-/* MPE_TASK_13_LONG_RUN_KEY_END */
+    // New F-key menu scheme: F6=test menu, F7=velocity, F8=spawner, F9=scene, F10=debug toggle. Old 7890 and direct F5-F10 tests removed.
+    if (event -> keyval == GDK_KEY_F6) {
+        // toggle test menu, close others
+        if (input_state -> test_menu_level > 0) input_state -> test_menu_level = 0;
+        else {
+            input_state -> test_menu_level = 1;
+            input_state -> is_menu_open = false;
+            input_state -> spawner_menu_level = 0;
+            input_state -> velocity_menu_level = 0;
+            input_state -> object_menu_level = 0;
+        }
+    }
+    if (event -> keyval == GDK_KEY_F7) {
+        input_state -> is_menu_open = false; input_state -> spawner_menu_level = 0; input_state -> object_menu_level = 0; input_state -> test_menu_level = 0;
+        if (input_state -> velocity_menu_level > 0) input_state -> velocity_menu_level = 0; else input_state -> velocity_menu_level = 1;
+    }
+    if (event -> keyval == GDK_KEY_F8) {
+        input_state -> is_menu_open = false; input_state -> velocity_menu_level = 0; input_state -> object_menu_level = 0; input_state -> test_menu_level = 0;
+        if (input_state -> spawner_menu_level > 0) input_state -> spawner_menu_level = 0; else input_state -> spawner_menu_level = 1;
+    }
+    if (event -> keyval == GDK_KEY_F9) {
+        input_state -> spawner_menu_level = 0; input_state -> velocity_menu_level = 0; input_state -> object_menu_level = 0; input_state -> test_menu_level = 0;
+        input_state -> is_menu_open = !(input_state -> is_menu_open);
+    }
+    if (event -> keyval == GDK_KEY_F10) {
+        input_state -> is_menu_open = false; input_state -> spawner_menu_level = 0; input_state -> velocity_menu_level = 0; input_state -> object_menu_level = 0; input_state -> test_menu_level = 0;
+        input_state -> is_debug_mode_active = !input_state -> is_debug_mode_active;
+        // DEBUG=CREATIVE, GAME=SURVIVAL
+        if (input_state -> is_debug_mode_active) player_set_game_mode(GAME_MODE_CREATIVE);
+        else player_set_game_mode(GAME_MODE_SURVIVAL);
+    }
+    // F6 test menu selection 1-6 maps to old F5-F10
+    if (input_state -> test_menu_level == 1) {
+        bool test_handled = false;
+        if (event -> keyval == GDK_KEY_1) { input_state -> stability_test_pressed = true; input_state -> test_menu_level = 0; test_handled = true; }
+        else if (event -> keyval == GDK_KEY_2) { input_state -> sleep_wake_test_pressed = true; input_state -> test_menu_level = 0; test_handled = true; }
+        else if (event -> keyval == GDK_KEY_3) { input_state -> editor_torture_pressed = true; input_state -> test_menu_level = 0; test_handled = true; }
+        else if (event -> keyval == GDK_KEY_4) { input_state -> spawn_stress_pressed = true; input_state -> test_menu_level = 0; test_handled = true; }
+        else if (event -> keyval == GDK_KEY_5) { input_state -> validation_report_pressed = true; input_state -> test_menu_level = 0; test_handled = true; }
+        else if (event -> keyval == GDK_KEY_6) { input_state -> long_run_validation_pressed = true; input_state -> test_menu_level = 0; test_handled = true; }
+        else if (event -> keyval == GDK_KEY_Escape) { input_state -> test_menu_level = 0; test_handled = true; }
+        if (test_handled) return FALSE;
+        // while test menu open, block hotbar 1-9
+        if (event -> keyval >= GDK_KEY_1 && event -> keyval <= GDK_KEY_9) return FALSE;
+    }
     if (event -> keyval == GDK_KEY_i) {input_state -> i_key_pressed = true;}
     if (event -> keyval == GDK_KEY_j) {input_state -> j_key_pressed = true;}
     if (event -> keyval == GDK_KEY_k) {input_state -> k_key_pressed = true;}
     if (event -> keyval == GDK_KEY_l) {input_state -> l_key_pressed = true;}
-    if (event -> keyval == GDK_KEY_9) {input_state -> spawner_menu_level = 0; input_state -> velocity_menu_level = 0; input_state -> object_menu_level = 0; input_state -> is_menu_open = !(input_state -> is_menu_open);}
-    if (event -> keyval == GDK_KEY_8) {input_state -> is_menu_open = false; input_state -> velocity_menu_level = 0; input_state -> object_menu_level = 0; if (input_state -> spawner_menu_level > 0) {input_state -> spawner_menu_level = 0;} else {input_state -> spawner_menu_level = 1;}}
-    if (event -> keyval == GDK_KEY_7) {input_state -> is_menu_open = false; input_state -> spawner_menu_level = 0; input_state -> object_menu_level = 0; if (input_state -> velocity_menu_level > 0) {input_state -> velocity_menu_level = 0;} else {input_state -> velocity_menu_level = 1;}}
     /* MPE_TASK_18_TERMINAL_KEY_BEGIN */
 if ((event -> keyval == GDK_KEY_1) &&
 (input_state -> is_debug_mode_active) &&
@@ -185,8 +223,40 @@ input_state -> enter_spawn_held = true;
 /* MPE_TASK_22_ENTER_SPAWN_KEYPRESS_END */
 if (event -> keyval == GDK_KEY_space) {input_state -> space_key_pressed = true;}
     if (event -> keyval == GDK_KEY_Shift_L) {input_state -> shift_key_pressed = true;}
-    if (event -> keyval == GDK_KEY_Escape) {input_state -> escape_key_pressed = true;}
-    if (event -> keyval == GDK_KEY_0) {input_state -> is_debug_mode_active = !input_state -> is_debug_mode_active;}
+    if (event -> keyval == GDK_KEY_Escape) {
+        if (input_state -> test_menu_level > 0) input_state -> test_menu_level = 0;
+        else if (input_state -> is_menu_open || input_state -> spawner_menu_level > 0 || input_state -> velocity_menu_level > 0 || input_state -> object_menu_level > 0) {
+            input_state -> is_menu_open = false; input_state -> spawner_menu_level = 0; input_state -> velocity_menu_level = 0; input_state -> object_menu_level = 0;
+        } else input_state -> escape_key_pressed = true;
+    }
+    /* Minecraft hotbar 1-9 — only when no menu open */
+    if (!input_state->is_menu_open && input_state->spawner_menu_level==0 && input_state->velocity_menu_level==0 && input_state->object_menu_level==0 && input_state->test_menu_level==0) {
+        if (event->keyval >= GDK_KEY_1 && event->keyval <= GDK_KEY_9) {
+            int slot = event->keyval - GDK_KEY_1;
+            inventory_select_hotbar_slot(slot);
+            // sync pw_selected_block to inventory's selected item
+            int item = player_get_item_in_hand();
+            const item_type *it = item_type_get(item);
+            if (it && it->placeable && it->block_id >=0) {
+                pw_selected_block = it->block_id;
+            }
+            return FALSE;
+        }
+        if (event->keyval == GDK_KEY_q || event->keyval == GDK_KEY_Q) {
+            // drop selected
+            int slot = g_player.inventory.selected_hotbar_slot;
+            item_stack_t *st = inventory_get_slot(slot);
+            if (st && st->count>0) { st->count--; if(st->count<=0){st->item_id=ITEM_AIR; st->damage=0;} }
+            return FALSE;
+        }
+        if (event->keyval == GDK_KEY_e || event->keyval == GDK_KEY_E) {
+            // E also toggles inventory in survival — keep object menu in debug
+            if (!input_state->is_debug_mode_active) {
+                inventory_open_close();
+                return FALSE;
+            }
+        }
+    }
     return FALSE;
 } gboolean on_key_released (GtkWidget *widget, GdkEventKey *event, gpointer user_data_stored) {
     (void) widget;
@@ -252,7 +322,7 @@ input_state -> enter_spawn_held = false;
     } return FALSE;
 } gboolean on_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
     input_status *input_state = (input_status *) user_data_stored;
-    if (event -> button == 1) {input_state -> left_mouse_button_clicked = true;}
+    if (event -> button == 1) {input_state -> left_mouse_button_clicked = true; input_state -> left_mouse_held = true;}
     if (event -> button == 2) {input_state -> middle_mouse_button_clicked = true;}
     if (event -> button == 3) {input_state -> right_mouse_button_clicked = true;}
     if (!(input_state -> is_mouse_locked)) {
@@ -264,7 +334,7 @@ input_state -> enter_spawn_held = false;
 } gboolean on_button_release (GtkWidget *widget, GdkEventButton *event, gpointer user_data_stored) {
     (void) widget;
     input_status *input_state = (input_status *) user_data_stored;
-    if (event -> button == 1) {input_state -> left_mouse_button_clicked = false;}
+    if (event -> button == 1) {input_state -> left_mouse_button_clicked = false; input_state -> left_mouse_held = false;}
     if (event -> button == 2) {input_state -> middle_mouse_button_clicked = false;}
     if (event -> button == 3) {input_state -> right_mouse_button_clicked = false;}
     return FALSE;
@@ -290,7 +360,7 @@ input_state -> delete_key_pressed = false;
 input_state -> m_key_pressed = false;
 input_state -> t_key_pressed = false;
 /* MPE_TASK_21_KEYBOARD_ONLY_FOCUS_END */
-input_state -> up_arrow_pressed = false;
+    input_state -> up_arrow_pressed = false;
     input_state -> down_arrow_pressed = false;
     input_state -> left_arrow_pressed = false;
     input_state -> right_arrow_pressed = false;
@@ -301,6 +371,7 @@ input_state -> sleep_wake_test_pressed = false;
 input_state -> editor_torture_pressed = false;
 input_state -> spawn_stress_pressed = false;
 input_state -> validation_report_pressed = false;
+input_state -> test_menu_level = 0;
     /* MPE_TASK_13_LONG_RUN_FOCUS_BEGIN */
 input_state -> long_run_validation_pressed = false;
 /* MPE_TASK_13_LONG_RUN_FOCUS_END */
@@ -314,6 +385,7 @@ input_state -> enter_spawn_held = false;
     input_state -> mouse_delta_x = 0.0f;
     input_state -> mouse_delta_y = 0.0f;
     input_state -> left_mouse_button_clicked = false;
+    input_state -> left_mouse_held = false;
     input_state -> right_mouse_button_clicked = false;
     input_state -> middle_mouse_button_clicked = false;
     input_state -> suppress_mouse_delta = false;
@@ -330,10 +402,18 @@ input_state -> enter_spawn_held = false;
 gboolean on_scroll (GtkWidget *widget, GdkEventScroll *event, gpointer user_data_stored) {
     (void) widget;
     (void) user_data_stored;
-    if (event->direction == GDK_SCROLL_UP) {
-        game_scroll_block (1);
-    } else if (event->direction == GDK_SCROLL_DOWN) {
-        game_scroll_block (-1);
+    // In survival, scroll cycles hotbar; in creative/debug also allow block cycling
+    if (g_player.stats.game_mode == GAME_MODE_SURVIVAL || g_player.stats.game_mode == GAME_MODE_CREATIVE) {
+        int cur = g_player.inventory.selected_hotbar_slot;
+        if (event->direction == GDK_SCROLL_UP) cur = (cur+8)%9;
+        else if (event->direction == GDK_SCROLL_DOWN) cur = (cur+1)%9;
+        inventory_select_hotbar_slot(cur);
+        int item = player_get_item_in_hand();
+        const item_type *it = item_type_get(item);
+        if (it && it->placeable && it->block_id >=0) pw_selected_block = it->block_id;
+    } else {
+        if (event->direction == GDK_SCROLL_UP) game_scroll_block (1);
+        else if (event->direction == GDK_SCROLL_DOWN) game_scroll_block (-1);
     }
     return FALSE;
 }

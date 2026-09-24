@@ -1,12 +1,12 @@
-# MPE v14S Release Gates
+# v10S Release Gates
 
-# Legacy Backlog --> v14S stabilised. PotatoWorld v2 game layer added (September 2026).
+# Legacy Backlog --> v10S stabilised. v10S game layer added (September 2026).
 
-This document defines the exit criteria for promoting `v14A3` to `v14S`.
+This document defines the exit criteria for promoting `v10S` to `v10S`.
 
-`v14S` is the stable release form of `v14A3`.
+`v10S` is the stable release form of `v10S`.
 
-PotatoWorld v2 is an additive game layer built on top of v14S. It does not modify MPE engine physics code. Its validation is documented in `A3_VALIDATION.md`.
+v10S is an additive game layer built on top of v10S. It does not modify v10S engine physics code. Its validation is documented in `A3_VALIDATION.md`.
 
 The stable release is not required to be perfect.
 It is required to be:
@@ -26,7 +26,7 @@ It is required to be:
 
 P0 gates are mandatory.
 
-If any P0 gate fails, `v14S` must not be tagged.
+If any P0 gate fails, `v10S` must not be tagged.
 
 ### P1 Gates
 
@@ -39,7 +39,7 @@ A P1 gate may be deferred only if:
 
 ### P2 / P3 Gates
 
-P2 and P3 gates are optional for `v14S`.
+P2 and P3 gates are optional for `v10S`.
 
 They should be recorded as post-stable work items.
 
@@ -49,7 +49,7 @@ They should be recorded as post-stable work items.
 
 ### 1. Release Freeze
 
-- [x] The `v14A3` release freeze policy is present and acknowledged.
+- [x] The `v10S` release freeze policy is present and acknowledged.
 - [x] No new features are being added.
 - [x] Only correctness, stability, validation, documentation, and hygiene changes are accepted.
 
@@ -179,7 +179,7 @@ They should be recorded as post-stable work items.
 
 ## Deferred / Post-Stable Work
 
-The following are not required for `v14S`:
+The following are not required for `v10S`:
 
 - full global-state removal,
 - full `PhysicsWorld` encapsulation,
@@ -190,26 +190,26 @@ The following are not required for `v14S`:
 - scene format version 2,
 - complete UI state-machine rewrite.
 
-These belong after `v14S`.
+These belong after `v10S`.
 
 ---
 
-## PotatoWorld v2 Game Layer
+## v10S Game Layer
 
-PotatoWorld v2 adds a Minecraft-style voxel world on top of MPE v14S. The game layer is validated separately:
+v10S adds a Minecraft-style voxel world on top of v10S. The game layer is validated separately:
 
 - [x] V01: ASan+UBSan build passes (0 warnings, 0 errors)
 - [x] V02: Clean release build passes (0 warnings, binary produced)
 - [x] V03: Headless physics stress test passes (0 NaN, 0 fallen)
 - [ ] V04: F10 long-run validation (requires GUI)
 
-The game layer code lives in `src/game/` and does not modify any MPE engine physics files.
+The game layer code lives in `src/game/` and does not modify any v10S engine physics files.
 
 ---
 
 ## Release Decision
 
-`v14S` may be tagged only when:
+`v10S` may be tagged only when:
 
 1. all P0 gates pass,
 2. all accepted P1 gates pass or are documented as known limitations,
@@ -221,5 +221,5 @@ If any mandatory gate fails, the correct action is:
 
 - fix the gate failure,
 - rerun validation,
-- and only then re-evaluate `v14S`.
+- and only then re-evaluate `v10S`.
 

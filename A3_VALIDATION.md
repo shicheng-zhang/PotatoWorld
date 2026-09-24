@@ -1,10 +1,10 @@
-# MPE v14A3.51 Validation Checklist
-> This checklist is subordinate to [`RELEASE_GATES.md`](RELEASE_GATES.md), which is the authoritative gate list for `v14S`.
-> PotatoWorld v2 game layer validation results are appended below.
+# v10S.51 Validation Checklist
+> This checklist is subordinate to [`RELEASE_GATES.md`](RELEASE_GATES.md), which is the authoritative gate list for `v10S`.
+> v10S game layer validation results are appended below.
 
 
 <!-- MPE_RELEASE_GATES_SECTION_BEGIN -->
-## v14S Release Gates
+## v10S Release Gates
 
 The stable release is controlled by [`RELEASE_GATES.md`](RELEASE_GATES.md).
 
@@ -24,7 +24,7 @@ Minimum mandatory gates:
 - [x] Repository artifacts are cleaned.
 - [x] Sanitizer validation passes.
 
-Do not tag `v14S` until all mandatory P0 gates pass.
+Do not tag `v10S` until all mandatory P0 gates pass.
 <!-- MPE_RELEASE_GATES_SECTION_END -->
 
 This checklist validates the full 1-51 A3 patch sequence.
@@ -80,7 +80,7 @@ This checklist validates the full 1-51 A3 patch sequence.
 
 - [ ] make -C src clean succeeds.
 - [ ] make -C src succeeds.
-- [ ] Startup prints: MPE v14A3.51
+- [ ] Startup prints: v10S.51
 
 ## Final Pass
 
@@ -104,9 +104,9 @@ If all pass, the A3 patch sequence is complete.
 
 ---
 
-## PotatoWorld v2 — Game Layer Validation
+## v10S — Game Layer Validation
 
-The game layer (`src/game/`) was validated separately from the MPE engine. All tests target the additive game code only.
+The game layer (`src/game/`) was validated separately from the v10S engine. All tests target the additive game code only.
 
 ### V01: ASan + UBSan Build
 

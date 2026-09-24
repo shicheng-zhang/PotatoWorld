@@ -132,7 +132,7 @@ static void body_voxel_collide(test_body *b) {
 }
 
 int main(void) {
-    printf("=== PotatoWorld Headless Stability Test ===\n");
+    printf("=== v10S Headless Stability Test ===\n");
 
     /* 1. Terrain generation test */
     generate_flat_terrain(4);

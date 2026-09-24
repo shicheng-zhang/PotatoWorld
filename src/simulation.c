@@ -1,5 +1,6 @@
 #include "mpe_engine.h"
 #include "game/game_init.h"
+#include "game/player.h"
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -516,9 +517,10 @@ debug_terminal_sync_mode ();
         main_camera_fov.pitch += main_inputs.mouse_delta_y * perspective_steering_sensitivity;
         main_inputs.mouse_delta_x = 0.0f;
         main_inputs.mouse_delta_y = 0.0f;
-    } //IJKL Emulation (Debug Mode)
+    } //IJKL Emulation (Debug Mode) + Creative collision (no phasing)
     if (main_inputs.is_debug_mode_active) {
         float debug_speed = main_camera_fov.movement_speed * frame_delta_time;
+        vector3 old_pos = main_camera_fov.position;
         if (main_inputs.w_key_pressed) {main_camera_fov.position = vector3_addition (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, debug_speed));}
         if (main_inputs.s_key_pressed) {main_camera_fov.position = vector3_subtraction (main_camera_fov.position, vector3_scaling (main_camera_fov.forward_vector, debug_speed));}
         if (main_inputs.a_key_pressed) {main_camera_fov.position = vector3_subtraction (main_camera_fov.position, vector3_scaling (main_camera_fov.side_vector, debug_speed));}
@@ -527,6 +529,13 @@ debug_terminal_sync_mode ();
 /* MPE_TASK_22_SHIFT_DOWN_BEGIN */
 if (main_inputs.shift_key_pressed) {main_camera_fov.position.y -= debug_speed;}
 /* MPE_TASK_22_SHIFT_DOWN_END */
+        // keep collision even in creative (no phasing) — resolve any penetration
+        {
+            float dummy_v = 0, dummy_hx = 0, dummy_hz = 0;
+            game_player_collide(&main_camera_fov.position.x, &main_camera_fov.position.y, &main_camera_fov.position.z, &dummy_v, &dummy_hx, &dummy_hz);
+            // if we hit wall, don't stick: if position didn't change due to collision, keep old? aabb already pushes out
+            (void)old_pos;
+        }
         float ijkl_speed = 35.0f * frame_delta_time;
         if (main_inputs.i_key_pressed) {main_camera_fov.pitch += ijkl_speed;}
         if (main_inputs.k_key_pressed) {main_camera_fov.pitch -= ijkl_speed;}
@@ -536,35 +545,97 @@ if (main_inputs.shift_key_pressed) {main_camera_fov.position.y -= debug_speed;}
     if (main_camera_fov.pitch < -89.0f) {main_camera_fov.pitch = -89.0f;}
     camera_update_vectors (&main_camera_fov);
     //Character Logic
-    if (!main_inputs.is_debug_mode_active) {
-        float horizontal_friction = 8.0f;
-        main_camera_fov.horizontal_velocity.x -= main_camera_fov.horizontal_velocity.x * horizontal_friction * frame_delta_time;
-        main_camera_fov.horizontal_velocity.z -= main_camera_fov.horizontal_velocity.z * horizontal_friction * frame_delta_time;
-        main_camera_fov.position.x += main_camera_fov.horizontal_velocity.x * frame_delta_time;
-        main_camera_fov.position.z += main_camera_fov.horizontal_velocity.z * frame_delta_time;
-        main_camera_fov.vertical_velocity += world_gravity_y * frame_delta_time;
-        main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time;
-        /* Game layer: player-voxel collision */
+         if (!main_inputs.is_debug_mode_active) {
+        float forward_x = main_camera_fov.forward_vector.x;
+        float forward_z = main_camera_fov.forward_vector.z;
+        float strafe_x = main_camera_fov.side_vector.x;
+        float strafe_z = main_camera_fov.side_vector.z;
+        float move_speed = main_camera_fov.movement_speed;
+        // cap sprint similar to Minecraft 4.3 m/s
+        if (move_speed > 8.0f) move_speed = 8.0f;
+        float speed = move_speed * frame_delta_time;
+
+        float move_forward_x = 0.0f, move_forward_z = 0.0f;
+        float move_strafe_x = 0.0f, move_strafe_z = 0.0f;
+        if (main_inputs.w_key_pressed) {move_forward_x += forward_x; move_forward_z += forward_z;}
+        if (main_inputs.s_key_pressed) {move_forward_x -= forward_x; move_forward_z -= forward_z;}
+        if (main_inputs.a_key_pressed) {move_strafe_x -= strafe_x; move_strafe_z -= strafe_z;}
+        if (main_inputs.d_key_pressed) {move_strafe_x += strafe_x; move_strafe_z += strafe_z;}
+
+        float total_x = move_forward_x + move_strafe_x;
+        float total_z = move_forward_z + move_strafe_z;
+        float total_len = sqrtf (total_x * total_x + total_z * total_z);
+
+        if (total_len > 0.001f) {
+            total_x /= total_len;
+            total_z /= total_len;
+            game_move_player (&main_camera_fov.position.x, &main_camera_fov.position.y, &main_camera_fov.position.z,
+                               total_x, total_z, speed);
+            // update horizontal velocity for spawn etc (minecraft-like)
+            main_camera_fov.horizontal_velocity.x = total_x * move_speed;
+            main_camera_fov.horizontal_velocity.z = total_z * move_speed;
+        } else {
+            // friction / damping when no input (minecraft ground friction)
+            main_camera_fov.horizontal_velocity.x *= 0.82f;
+            main_camera_fov.horizontal_velocity.z *= 0.82f;
+            if (fabsf(main_camera_fov.horizontal_velocity.x) < 0.05f) main_camera_fov.horizontal_velocity.x = 0;
+            if (fabsf(main_camera_fov.horizontal_velocity.z) < 0.05f) main_camera_fov.horizontal_velocity.z = 0;
+        }
+
+        /* Game layer: player-voxel collision (resolves overlaps, sets grounded) */
         bool game_grounded = game_player_collide (
             &main_camera_fov.position.x, &main_camera_fov.position.y, &main_camera_fov.position.z,
             &main_camera_fov.vertical_velocity,
             &main_camera_fov.horizontal_velocity.x, &main_camera_fov.horizontal_velocity.z);
-        if (main_camera_fov.position.y <= 2.0f) {
-            main_camera_fov.position.y = 2.0f;
-            main_camera_fov.vertical_velocity = 0.0f;
-            game_grounded = true;
-        }
-        if (game_grounded) {
-            if (main_camera_fov.vertical_velocity < 0.0f) {main_camera_fov.vertical_velocity = 0.0f;}
+
+        // coyote time: allow jump 150ms after leaving ground
+        static float coyote_timer = 0.0f;
+        if (game_grounded) coyote_timer = 0.15f;
+        else coyote_timer -= frame_delta_time;
+        bool can_jump = game_grounded || coyote_timer > 0.0f;
+
+        if (can_jump) {
+            // stay grounded: zero vertical, snap already done
+            if (main_camera_fov.vertical_velocity < 0) main_camera_fov.vertical_velocity = 0.0f;
             if (main_inputs.space_key_pressed) {
-                float jump_velocity = sqrtf (2.0f * fabsf (world_gravity_y) * jump_height);
-                main_camera_fov.vertical_velocity = jump_velocity;
+                // physics: v = sqrt(2*g*h)  with h = jump_height
+                float jump_v = sqrtf(2.0f * fabsf(world_gravity_y) * jump_height);
+                if (jump_v < 3.5f) jump_v = 3.5f;
+                main_camera_fov.vertical_velocity = jump_v;
                 main_inputs.space_key_pressed = false;
+                coyote_timer = 0.0f;
+                game_grounded = false; // leave ground immediately
+                // lift off ground so next frame is airborne
+                main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time * 0.5f;
             }
-        } if (main_camera_fov.position.x < -250.0f) {main_camera_fov.position.x = -250.0f;}
+        }
+        if (!game_grounded) {
+            if (can_jump && main_camera_fov.vertical_velocity > 0) {
+                // just jumped: already lifted, apply gravity next frame
+                // do not apply gravity this frame to avoid double lift
+                main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time * 0.5f;
+            } else if (!can_jump || main_camera_fov.vertical_velocity <= 0) {
+                // actually airborne (or falling)
+                main_camera_fov.vertical_velocity += world_gravity_y * frame_delta_time;
+                main_camera_fov.position.y += main_camera_fov.vertical_velocity * frame_delta_time;
+                // air drag on horizontal
+                main_camera_fov.horizontal_velocity.x *= 0.98f;
+                main_camera_fov.horizontal_velocity.z *= 0.98f;
+            }
+            // coyote airborne: no gravity this frame (already handled)
+        }
+
+        /* Final position clamp */
+        if (main_camera_fov.position.x < -250.0f) {main_camera_fov.position.x = -250.0f;}
         if (main_camera_fov.position.x > 250.0f) {main_camera_fov.position.x = 250.0f;}
         if (main_camera_fov.position.z < -250.0f) {main_camera_fov.position.z = -250.0f;}
         if (main_camera_fov.position.z > 250.0f) {main_camera_fov.position.z = 250.0f;}
+        // survival tick
+        player_update(frame_delta_time);
+        // sync eye position for other systems
+        g_player.eye_position = main_camera_fov.position;
+        g_player.eye_position.y -= PLAYER_HEIGHT - PLAYER_EYE_HEIGHT;
+        g_player.on_ground = (main_camera_fov.vertical_velocity==0);
     } //Mouse, Escape, E, F key bindings and actions
     if (main_inputs.escape_key_pressed) {
         if (main_inputs.is_mouse_locked) {
@@ -576,10 +647,22 @@ if (main_inputs.shift_key_pressed) {main_camera_fov.position.y -= debug_speed;}
         game_on_right_click (main_camera_fov.position.x, main_camera_fov.position.y, main_camera_fov.position.z,
                              main_camera_fov.forward_vector.x, main_camera_fov.forward_vector.y, main_camera_fov.forward_vector.z);
         main_inputs.right_mouse_button_clicked = false;
-    }     if (main_inputs.left_mouse_button_clicked) {
+    }
+    /* v10S hold-to-break — every frame while left held, dt-driven */
+    game_tick_break (frame_delta_time,
+                     main_camera_fov.position.x, main_camera_fov.position.y, main_camera_fov.position.z,
+                     main_camera_fov.forward_vector.x, main_camera_fov.forward_vector.y, main_camera_fov.forward_vector.z,
+                     main_inputs.left_mouse_held);
+    if (main_inputs.left_mouse_button_clicked) {
         game_on_left_click (main_camera_fov.position.x, main_camera_fov.position.y, main_camera_fov.position.z,
                             main_camera_fov.forward_vector.x, main_camera_fov.forward_vector.y, main_camera_fov.forward_vector.z);
         main_inputs.left_mouse_button_clicked = false;
+    }
+    /* falling sand tick every ~0.2s to avoid 1M scan per frame */
+    {
+        static float fall_accum = 0.0f;
+        fall_accum += frame_delta_time;
+        if (fall_accum > 0.2f) { game_tick_falling(); fall_accum = 0.0f; }
     }
     if (main_inputs.middle_mouse_button_clicked) {
 /* A3_PATCH_04_SAFE_DELETION */

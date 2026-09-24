@@ -1,12 +1,12 @@
 ```markdown
-# PotatoWorld v2 — Miniature Physics Engine (MPE v14S)
+# v10S — Miniature Physics Engine (v10S)
 
 <!-- MPE_RELEASE_FREEZE_NOTICE_BEGIN -->
-> **Base engine:** `MPE v14S` — hardened, validated stable form of the v1.4 engine.
-> **Game layer:** `PotatoWorld v2` — voxel world, block placement/destruction, terrain collision.
+> **Base engine:** `v10S` — hardened, validated stable form of the v1.4 engine.
+> **Game layer:** `v10S` — voxel world, block placement/destruction, terrain collision.
 <!-- MPE_RELEASE_FREEZE_NOTICE_END -->
 <!-- MPE_RELEASE_GATES_NOTICE_BEGIN -->
-> **Release quality:** MPE v14S passed all 12 mandatory P0 gates in [`RELEASE_GATES.md`](RELEASE_GATES.md). PotatoWorld v2 game layer validated via V01–V03 (see [`A3_VALIDATION.md`](A3_VALIDATION.md)).
+> **Release quality:** v10S passed all 12 mandatory P0 gates in [`RELEASE_GATES.md`](RELEASE_GATES.md). v10S game layer validated via V01–V03 (see [`A3_VALIDATION.md`](A3_VALIDATION.md)).
 <!-- MPE_RELEASE_GATES_NOTICE_END -->
 
 **License:** GPL-3.0 · **Language:** C · **UI:** GTK3 · **Renderer:** OpenGL 3.3 Core
@@ -15,9 +15,9 @@
 
 ## 📋 Overview
 
-MPE is a custom-built **3D rigid-body physics engine and real-time rendering pipeline**, written entirely in **C**. It runs on a **zero-dependency core** — the only external requirements are **GTK3** (windowing/UI) and **OpenGL** (render backend).
+v10S is a custom-built **3D rigid-body physics engine and real-time rendering pipeline**, written entirely in **C**. It runs on a **zero-dependency core** — the only external requirements are **GTK3** (windowing/UI) and **OpenGL** (render backend).
 
-MPE is built around four priorities:
+v10S is built around four priorities:
 
 - **Mathematical transparency** — every integrator, solver, and collision test is hand-written and inspectable.
 - **Cache-efficient data layouts** — tightly packed structs and contiguous instance buffers.
@@ -26,9 +26,9 @@ MPE is built around four priorities:
 
 ---
 
-## PotatoWorld v2 — Game Layer
+## v10S — Game Layer
 
-PotatoWorld v2 adds a Minecraft-style voxel world on top of the MPE v14S physics engine. The game layer is additive — no MPE engine physics code is modified.
+v10S adds a Minecraft-style voxel world on top of the v10S physics engine. The game layer is additive — no v10S engine physics code is modified.
 
 ### Voxel World
 - **128 x 64 x 128 block world** (8 x 4 x 8 chunks, 16 blocks per chunk)
@@ -55,9 +55,9 @@ PotatoWorld v2 adds a Minecraft-style voxel world on top of the MPE v14S physics
 
 ---
 
-## ✨ What's New in v14S
+## ✨ What's New in v10S
 
-`v14S` completes the release-candidate freeze with a full pass of correctness, stability, validation, documentation, and hygiene fixes. Highlights carried into stable:
+`v10S` completes the release-candidate freeze with a full pass of correctness, stability, validation, documentation, and hygiene fixes. Highlights carried into stable:
 
 - **Domain-driven architecture** — clean `core`, `physics`, `render`, `scene`, `ui_input` modules.
 - **Warm-starting contact solver** with multi-point Sutherland–Hodgman manifolds for stable stacking.
@@ -72,7 +72,7 @@ PotatoWorld v2 adds a Minecraft-style voxel world on top of the MPE v14S physics
 ## 🎨 Rendering System
 
 ### Hardware-Instanced Rendering
-MPE eliminates per-object draw calls using **GPU instancing**:
+v10S eliminates per-object draw calls using **GPU instancing**:
 
 - The CPU packs model matrices + colors into contiguous buffers.
 - The GPU batches all dynamic bodies into **two instanced draws** (spheres, cubes).
@@ -139,7 +139,7 @@ A fully custom, dependency-free math library: 3D vectors, 4×4 matrices, quatern
 | Re-lock mouse (Debug) | `M` |
 | Toggle Game / Debug mode | `0` |
 
-### Block Interaction (PotatoWorld v2)
+### Block Interaction (v10S)
 | Action | Input |
 |---|---|
 | Destroy block | Left-click |
@@ -206,7 +206,7 @@ Type `help` for the full command list, `man <command>` for usage. `Ctrl+L` clear
 
 ## 🧪 Validation Tests
 
-MPE ships with built-in stability tests:
+v10S ships with built-in stability tests:
 
 | Key | Test |
 |---|---|
@@ -243,17 +243,17 @@ make
 ## ⚠️ Known Limitations
 
 - **Wayland:** Mouse locking does not work under native Wayland. Run under X11, or try `GDK_BACKEND=x11 ./engine`.
-- **Scene format:** Save/load preserves bodies but **not** spring joints, object IDs, or sleep state. Scene format v2 is planned post-v14S.
+- **Scene format:** Save/load preserves bodies but **not** spring joints, object IDs, or sleep state. Scene format v2 is planned post-v10S.
 - **Object count:** Performance degrades gradually above ~1136 objects; rendering is the primary bottleneck at high counts.
 - **Global state:** The engine still uses file-scope globals; full encapsulation is deferred to v15.
-- **PotatoWorld v2:** Block placement uses a default block type. Block inventory menu not yet ported from old PotatoWorld. Spawn gun mechanics pending.
+- **v10S:** Block placement uses a default block type. Block inventory menu not yet ported from old v10S. Spawn gun mechanics pending.
 
 ---
 
 ## 📜 Version History
 
-- **PotatoWorld v2** — Minecraft-style game layer on MPE v14S. *(current)*
-- **v14S (stable)** — hardened, validated stable form of v1.4.
+- **v10S** — Minecraft-style game layer on v10S. *(current)*
+- **v10S (stable)** — hardened, validated stable form of v1.4.
 - **v1.4 Alpha RC3** — domain-driven restructure, spatial-hash broadphase, physics-world encapsulation.
 - **v1.4 Alpha 2** — warm-starting solver, multi-point contact manifolds.
 - **v1.4 Alpha RC1** — spring joints, joint renderer, color painting, OBB raycast selection.

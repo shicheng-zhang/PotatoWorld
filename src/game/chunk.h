@@ -1,4 +1,4 @@
-/* PotatoWorld v2 — Chunk System
+/* v10S — Chunk System
  * 16x16x16 chunks with dirty-flag rebuild and GPU mesh handles. */
 
 #ifndef game_chunk_h

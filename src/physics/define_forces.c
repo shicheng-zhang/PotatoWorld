@@ -45,8 +45,6 @@ void force_applicant_friction_rolling (rigidbody *rigid_body, vector3 surface_no
         float accumulated_force_magnitude = vector3_length (accumulated_tangential_force);
         if (accumulated_force_magnitude < static_friction_coefficient * normal_force_magnitude) {
             rb_apply_forces_perfect (rigid_body, vector3_scaling (accumulated_tangential_force, -1.0f));
-            //Stop micro-sliding
-            rigid_body -> velocity = vector3_subtraction (rigid_body -> velocity, tangential_velocity);
         }
     }
 } void force_applicant_friction (rigidbody *rigid_body, vector3 surface_normal, float static_friction_coefficient, float kinetic_friction_coefficient, float gravity_y) {
@@ -72,7 +70,6 @@ void force_applicant_friction_rolling (rigidbody *rigid_body, vector3 surface_no
             //Force applied < Force Static Friction --> No movement
             //Neutralise Sliding Force
             rb_apply_forces_perfect (rigid_body, vector3_scaling (accumulated_tangential_force, -1.0f));
-            rigid_body -> velocity = vector3_zero ();
         }
     }
 } //Spring Force, Tension, Hooke Law

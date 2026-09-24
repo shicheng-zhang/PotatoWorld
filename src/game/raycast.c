@@ -1,4 +1,4 @@
-/* PotatoWorld v2 — DDA Voxel Raycast Implementation */
+/* v10S — DDA Voxel Raycast Implementation */
 
 #include "raycast.h"
 #include "world.h"

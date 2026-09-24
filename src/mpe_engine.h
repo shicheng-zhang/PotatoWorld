@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ */
-/* MPE v14S — PotatoWorld v2 Engine Base                              */
+/* v10S — v10S Engine Base                              */
 /* Licensed under GPL-3.0. See LICENSE.                               */
 /* ------------------------------------------------------------------ */
 
@@ -47,7 +47,7 @@
 #include "ui_input/debug_terminal.h"
 /* MPE_TASK_18_TERMINAL_INCLUDE_END */
 
-/* PotatoWorld v2 game layer */
+/* v10S game layer */
 #include "game/game_init.h"
 /* ------------------------------------------------------------------ */
 /* Global scene state                                                 */
@@ -120,11 +120,11 @@ extern int debug_last_manifold_overflow_count;
 /* MPE_TASK_09_MANIFOLD_OVERFLOW_EXTERN_END */
 
 /* A3_PATCH_41_FINAL_VALIDATION */
-#define A3_VERSION_STRING "PotatoWorld v2 (MPE v14S)" /* PotatoWorld v2 on MPE v14S base */
+#define A3_VERSION_STRING "v10S" /* v10S on v10S base */
 
 /* MPE_RELEASE_FREEZE_BEGIN */
 #define A3_RELEASE_FREEZE 0
-#define A3_RELEASE_FREEZE_NOTE "PotatoWorld v2 — MPE v14S base stable, game layer added"
+#define A3_RELEASE_FREEZE_NOTE "v10S — v10S base stable, game layer added"
 /* MPE_RELEASE_FREEZE_END */
 
 #endif // mpe_engine_h
